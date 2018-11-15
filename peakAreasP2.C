@@ -2,6 +2,8 @@
 using std::cout;
 using std::endl;
 
+#include <typeinfo>
+
 #include <string>
 using std::string;
 
@@ -44,7 +46,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	TFile *fyield = new TFile(fileName);
 	TH1D *hyield = static_cast<TH1D*>(fyield->Get(detector));
 	TH1D *qcharge = static_cast<TH1D*>(fyield->Get("h1-7"));
-	int charge = qcharge->GetEntries();
+	double charge = qcharge->GetEntries();
 	gStyle->SetOptFit(1111);
 
 	TCanvas *c0 = new TCanvas("c0","c0",600,800);
@@ -131,7 +133,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 
 	int lower = par[4]-3*par[5];
 	int upper = par[4]+3*par[5];
-	int area = 0;
+	double area = 0;
 	double err = 0;
 	double area_err = 0;
 
@@ -148,15 +150,15 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	string runNum = fileName;
 	// cout << "________________________________________________________" << endl;
 	// cout << runNum << endl;
-	runNum = runNum.substr(4,3);
-	// runNum = runNum.substr(73,3);
+	// runNum = runNum.substr(4,3);
+	runNum = runNum.substr(73,3);
 	// cout << runNum << endl;
 	string detNum = detector;
 
 	c0->SaveAs(Form("peakAreasP2/run0%s/det_%s_Fit.pdf",runNum.c_str(),detNum.c_str()));
 
 	double yield = area/charge;
-	cout << yield << " " <<area << " " <<charge<<endl;
+	// cout << yield << " " <<typeid(area).name() << " " <<typeid(charge).name()<<endl;
 	double yield_err = area_err/charge;
 
 	double chi2NDF = ffit->GetChisquare()/ffit->GetNDF();
@@ -188,8 +190,18 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 
 int peakAreasP2(){
 
+	const char *path = "/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/";
+	chdir(path);
+	gSystem->Exec(Form("mkdir peakAreasP2"));
+	gSystem->Exec(Form("mkdir peakAreasP2/run0%d",i));
+
+	ofstream myfile;
+	myfile.open ("peakAreasP2.csv",std::ios::app);
+	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Fit Status"<<"\n";
+	myfile.close();
+
 	// 159 to 410
-	for(int i=159;i<162;i++){
+	for(int i=159;i<410;i++){
 
 		if(i==163) continue;
 		else if(i==164) continue;
@@ -210,14 +222,9 @@ int peakAreasP2(){
 
 		double p2;
 
-		// const char *path = "/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/";
-		// chdir(path);
-		gSystem->Exec(Form("mkdir peakAreasP2"));
-		gSystem->Exec(Form("mkdir peakAreasP2/run0%d",i));
-
 		for(int j=0;j<8;j++){
-			const char *files = Form("run0%d.root",i);
-			// const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
+			// const char *files = Form("run0%d.root",i);
+			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char *detect = Form("h0-%d",j);
 			// cout <<files << "  "<< detect <<endl;
 			if(j==0){
@@ -248,8 +255,8 @@ int peakAreasP2(){
 
 		}
 		for(int k=0;k<5;k++){
-			const char *files = Form("run0%d.root",i);
-			// const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
+			// const char *files = Form("run0%d.root",i);
+			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char*detect = Form("h1-%d",k);
 			// cout <<files << "  "<< detect <<endl;
 			if(k==0){

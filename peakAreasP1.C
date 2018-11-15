@@ -72,7 +72,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	TFile *fyield = new TFile(fileName);
 	TFile *fbackground = new TFile("background/run0422.root");
 	TH1D *qcharge = static_cast<TH1D*>(fyield->Get("h1-7"));
-	int charge = qcharge->GetEntries();
+	double charge = qcharge->GetEntries();
 	gStyle->SetOptFit(1111);
 
 	// Get runtime info from root file
@@ -198,6 +198,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	double sig_err = ffit->GetParError(5);
 	double area = par[3]*TMath::Sqrt(2*TMath::Pi()*par[5]*par[5]);
 	double area_err = TMath::Sqrt(2*TMath::Pi()*((par[5]*A_err)*(par[5]*A_err)+(par[3]*sig_err)*(par[3]*sig_err)));
+
 	double yield = area/charge;
 	double yield_err = area_err/charge;
 	// cout << chi2NDF << endl;
@@ -213,8 +214,8 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	string runNum = fileName;
 	// cout << "________________________________________________________" << endl;
 	// cout << runNum << endl;
-	runNum = runNum.substr(4,3);
-	// runNum = runNum.substr(73,3);
+	// runNum = runNum.substr(4,3);
+	runNum = runNum.substr(73,3);
 	// cout << runNum << endl;
 	string detNum = detector;
 
@@ -230,6 +231,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 // */
 	c0->Clear();
 	fyield->Close();
+	fbackground->Close();
 	delete c0;
 	delete ffit;
 	gROOT->Reset();
@@ -245,8 +247,18 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 
 int peakAreasP1(){
 
+	const char *path = "/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/";
+	chdir(path);
+	gSystem->Exec(Form("mkdir peakAreasP1"));
+	gSystem->Exec(Form("mkdir peakAreasP1/run0%d",i));
+
+	ofstream myfile;
+	myfile.open ("peakAreasP1.csv",std::ios::app);
+	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Fit Status"<<"\n";
+	myfile.close();
+
 	// 159 to 410
-	for(int i=159;i<162;i++){
+	for(int i=159;i<410;i++){
 
 		if(i==163) continue;
 		else if(i==164) continue;
@@ -267,14 +279,11 @@ int peakAreasP1(){
 
 		double p1;
 
-		// const char *path = "/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/";
-		// chdir(path);
-		gSystem->Exec(Form("mkdir peakAreasP1"));
-		gSystem->Exec(Form("mkdir peakAreasP1/run0%d",i));
+
 
 		for(int j=0;j<8;j++){
-			const char *files = Form("run0%d.root",i);
-			// const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
+			// const char *files = Form("run0%d.root",i);
+			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char *detect = Form("h0-%d",j);
 			// cout <<files << "  "<< detect <<endl;
 			if(j==0){
@@ -305,8 +314,8 @@ int peakAreasP1(){
 
 		}
 		for(int k=0;k<5;k++){
-			const char *files = Form("run0%d.root",i);
-			// const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
+			// const char *files = Form("run0%d.root",i);
+			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char*detect = Form("h1-%d",k);
 			// cout <<files << "  "<< detect <<endl;
 			if(k==0){
