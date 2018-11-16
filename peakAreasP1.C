@@ -250,7 +250,6 @@ int peakAreasP1(){
 	const char *path = "/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/";
 	chdir(path);
 	gSystem->Exec(Form("mkdir peakAreasP1"));
-	gSystem->Exec(Form("mkdir peakAreasP1/run0%d",i));
 
 	ofstream myfile;
 	myfile.open ("peakAreasP1.csv",std::ios::app);
@@ -278,6 +277,7 @@ int peakAreasP1(){
 		else if(i==255) continue;
 
 		double p1;
+		gSystem->Exec(Form("mkdir peakAreasP1/run0%d",i));
 
 
 
