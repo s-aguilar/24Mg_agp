@@ -228,6 +228,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 				","<<yield<<","<<yield_err<<","<<goodFit<<"\n";
 	myfile.close();
 
+
 // */
 	c0->Clear();
 	fyield->Close();

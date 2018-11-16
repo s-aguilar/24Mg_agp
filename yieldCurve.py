@@ -37,6 +37,7 @@ for det in detectors:
     plt.show()
 
 
+
 # Extract the columns of the DataFrame as numpy arrays
 p2Run = df2['Run'].values
 p2Det = df2['Detector'].values
