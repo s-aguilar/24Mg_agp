@@ -30,6 +30,7 @@ for det in detectors:
 
     plt.scatter(p1Ealpha[maskDet],p1Yield[maskDet],c='b',marker='.')
     # plt.errorbar(p1Ealpha[maskDet],p1Yield[maskDet],yerr=p1Yield_err[maskDet],fmt='b.')
+    # plt.yscale('log')
     plt.xlabel('$E_{\\alpha}$ (MeV)')
     plt.ylabel('Yield')
     plt.title('p1 %s'%det)
@@ -61,6 +62,7 @@ for det in detectors:
 
     plt.scatter(p2Ealpha[maskDet],p2Yield[maskDet],c='b',marker='.')
     # plt.errorbar(p1Ealpha[maskDet],p1Yield[maskDet],yerr=p1Yield_err[maskDet],fmt='b.')
+    # plt.yscale('log')
     plt.xlabel('$E_{\\alpha}$ (MeV)')
     plt.ylabel('Yield')
     plt.title('p2 %s'%det)
