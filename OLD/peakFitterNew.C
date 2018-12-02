@@ -52,7 +52,7 @@ double func(double *x, double *par){
 
 /*==============================MAIN=========================================*/
 
-int peakFitterNew(){
+int calibration(){
 
 	const char* fileName = "137Cs/24Mg_run/run0420.root";
 	const char *detector = "h1-4";
@@ -129,7 +129,7 @@ int peakFitterNew(){
 	c0->Update();
     c0->Flush();
 
-/*
+
     // Calculate errors
 	for(int i = 0; i<=ysubtracted->GetNbinsX(); i++){
 		double yval = ysubtracted->GetBinContent(i);
@@ -195,5 +195,5 @@ int peakFitterNew(){
 	// cout << "Peak position is: " << mean << " +/- " << sigma << endl;
 
 	return 0;
-	*/
+
 }

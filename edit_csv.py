@@ -11,14 +11,6 @@ pRun = df['Run'].values
 pEalpha = df['Ea (keV)'].values
 runToEalpha = {pRun[i]:pEalpha[i] for i in range(len(pRun))}
 
-
-crime_category = {'HOMICIDE':'Assault','OFFENSE INVOLVING CHILDREN':'Other',
-    'ARSON':'Criminal Damage'}
-
-# Colors for crime
-crime_colors = {'Theft':'b','Battery':'g','Criminal Damage':'r',
-                'Narcotics':'c','Assault':'m','Other':'y'}
-
 Ealpha = []
 
 for ind, val in df1['Run'].iteritems():
