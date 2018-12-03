@@ -170,7 +170,8 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 	string detNum = detector;
 	double area_err;
 	double area = ysubtracted->IntegralAndError(par[4]-3*par[5],par[4]+3*par[5],area_err,"width");
-
+	double mean = par[4];
+	double sigma = par[5];
 
 	// Save fits and calibration information
 	if (loop==0) {
@@ -178,7 +179,8 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 
 		ofstream myfile;
 		myfile.open ("60Co_1173cal.csv",std::ios::app);
-		myfile<< Form("det_%s",detNum.c_str())<<","<<area<<","<<area_err<<","<<runTime0<<"\n";
+		myfile<< Form("det_%s",detNum.c_str())<<","<<mean<<","<<sigma<<","<<area
+				<<","<<area_err<<","<<runTime0<<"\n";
 		myfile.close();
 	}
 	else if (loop==1) {
@@ -186,7 +188,8 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 
 		ofstream myfile;
 		myfile.open ("60Co_1332cal.csv",std::ios::app);
-		myfile<< Form("det_%s",detNum.c_str())<<","<<area<<","<<area_err<<","<<runTime0<<"\n";
+		myfile<< Form("det_%s",detNum.c_str())<<","<<mean<<","<<sigma<<","<<area
+				<<","<<area_err<<","<<runTime0<<"\n";
 		myfile.close();
 	}
 	else if (loop==2) {
@@ -194,7 +197,8 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 
 		ofstream myfile;
 		myfile.open ("137Cs_661cal.csv",std::ios::app);
-		myfile<< Form("det_%s",detNum.c_str())<<","<<area<<","<<area_err<<","<<runTime0<<"\n";
+		myfile<< Form("det_%s",detNum.c_str())<<","<<mean<<","<<sigma<<","<<area
+				<<","<<area_err<<","<<runTime0<<"\n";
 		myfile.close();
 	}
 
@@ -237,7 +241,8 @@ int effCalibration(){
 
 			ofstream myfile;
 			myfile.open ("60Co_1173cal.csv",std::ios::app);
-			myfile<<"Detector"<<","<<"area"<<","<<"area err"<<","<<"runtime"<<"\n";
+			myfile<<"Detector"<<","<<"Centroid"<<","<<"Width"<<","<<"Area"<<","
+					<<"Area err"<<","<<"Runtime"<<"\n";
 			myfile.close();
 		}
 
@@ -248,7 +253,8 @@ int effCalibration(){
 
 			ofstream myfile;
 			myfile.open ("60Co_1332cal.csv",std::ios::app);
-			myfile<<"Detector"<<","<<"area"<<","<<"area err"<<","<<"runtime"<<"\n";
+			myfile<<"Detector"<<","<<"Centroid"<<","<<"Width"<<","<<"Area"<<","
+					<<"Area err"<<","<<"Runtime"<<"\n";
 			myfile.close();
 		}
 
@@ -259,7 +265,8 @@ int effCalibration(){
 
 			ofstream myfile;
 			myfile.open ("137Cs_661cal.csv",std::ios::app);
-			myfile<<"Detector"<<","<<"area"<<","<<"area err"<<","<<"runtime"<<"\n";
+			myfile<<"Detector"<<","<<"Centroid"<<","<<"Width"<<","<<"Area"<<","
+					<<"Area err"<<","<<"Runtime"<<"\n";
 			myfile.close();
 		}
 
