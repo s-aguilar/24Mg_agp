@@ -59,6 +59,7 @@ totalDecayEvents_60Co = np.array(runtime_60Co*currentActivity_60Co)
 totalDecayEvents_137Cs = np.array(runtime_137Cs*currentActivity_137Cs)
 
 
+
 # Gather peak areas and their errors
 area_1173 = np.array(df_60Co_1173['Area'])
 areaErr_1173 = np.array(df_60Co_1173['Area err'])
@@ -85,9 +86,10 @@ avgEffErr = (effErr_661+effErr_1332+effErr_1173)/3
 
 
 # Angle (deg) for each detector, negative is beam left, positive is beam right
-angle = [120,105,90,45,30,15,0,-15,-30,-45,-90,-105,-120]
+#         00  01 02 03 04 05 06 07  10  11  12   13   14
+angle = np.array([120,105,90,45,30,15,0,-15,-30,-45,-90,-105,-120])
 
-# """
+"""
 # Plot efficiencies as function of angle for each calibration run
 plt.errorbar(angle,eff_1173,yerr=effErr_1173,fmt='.')
 plt.xlabel('Angle (deg)')
@@ -95,29 +97,31 @@ plt.xlim(-125,125)
 plt.ylabel('Efficiency')
 plt.ylim(0,.0006)
 plt.title('$^{60}$Co - E$_{\\gamma}$ = 1173 keV - Efficiencies')
-plt.tight_layout()
-plt.savefig('effPlots/1173_angular_eff.png',dpi=900)
-plt.show()
+# plt.tight_layout()
+plt.savefig('effPlots/1173_angular_eff.png',dpi=1200)
+# plt.show()
 
+plt.clf()
 plt.errorbar(angle,eff_1332,yerr=effErr_1332,fmt='.')
 plt.xlabel('Angle (deg)')
 plt.xlim(-125,125)
 plt.ylabel('Efficiency')
 plt.ylim(0,.0006)
 plt.title('$^{60}$Co - E$_{\\gamma}$ = 1332 keV - Efficiencies')
-plt.tight_layout()
-plt.savefig('effPlots/1332_angular_eff.png',dpi=900)
-plt.show()
+# plt.tight_layout()
+plt.savefig('effPlots/1332_angular_eff.png',dpi=1200)
+# plt.show()
 
+plt.clf()
 plt.errorbar(angle,eff_661,yerr=effErr_661,fmt='.')
 plt.xlabel('Angle (deg)')
 plt.xlim(-125,125)
 plt.ylabel('Efficiency')
 plt.ylim(0,.0006)
 plt.title('$^{137}$Cs - E$_{\\gamma}$ = 661 keV - Efficiencies')
-plt.tight_layout()
-plt.savefig('effPlots/661_angular_eff.png',dpi=900)
-plt.show()
+# plt.tight_layout()
+plt.savefig('effPlots/661_angular_eff.png',dpi=1200)
+# plt.show()
 #"""
 
 # plot the efficiency curve for each detector
@@ -131,20 +135,29 @@ split_effErr = np.hsplit(det_effErr,13)
 detName = np.array(df_60Co_1173['Detector'])
 e_gam = np.array([661.657,1173.228,1332.492])
 labels = ["$10^{-4}$","$10^{-3}$","$10^{-2}$"]
+labelsx = ["$10^{2}$","$10^{3}$","$10^{4}$"]
+fit_x = np.array([100,e_gam[0],e_gam[1],e_gam[2],2000])
 # """
 for xx in range(13):
+    plt.clf()
     plt.yscale('log')
+    plt.xscale('log')
+    z = interp1d(e_gam,split_eff[xx].flatten(),fill_value="extrapolate")
+    fit_y = z(fit_x)
+    plt.plot(fit_x,fit_y,color='r',alpha=.75)
     plt.errorbar(e_gam,split_eff[xx],yerr=split_effErr[xx],fmt='.')
-    plt.xlim(400,1800)
+    plt.xlim(600,2000)
+    # plt.xticks((100,1000,10000),labelsx)
     plt.xlabel('Energy (KeV)')
     plt.yticks((.0001,.001,.01),labels)
     plt.ylim(.0001,.001)
     plt.ylabel('Efficiency')
     plt.grid(b=True,which='both',axis='y',alpha=.5)
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.title('%s Efficiency Curve'%detName[xx])
-    plt.savefig('effPlots/detEffCurve/%s.png'%detName[xx],dpi=900)
-    plt.show()
+    plt.savefig('effPlots/detEffCurve/%s.png'%detName[xx],dpi=1200)
+    # plt.show()
+    plt.clf()
 
 
 # """

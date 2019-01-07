@@ -20,6 +20,8 @@ using std::string;
 #include "TCanvas.h"
 #include "TStyle.h"
 
+//vector global for a background histogram
+TH1D *HBACK;
 
 /*=============================FITTING=======================================*/
 
@@ -29,10 +31,12 @@ double background(double *x, double *par){
 
 
 double gauss(double *x, double *par){
-	double norm = par[0];
-	double mean = par[1];
-	double sigma = par[2];
-	return norm*TMath::Gaus(x[0],mean,sigma,kTRUE);
+	/*
+	norm = par[0]
+	mean = par[1]
+	sigma = par[2]
+	// */
+	return par[0]*TMath::Gaus(x[0],par[1],par[2],kTRUE);
 }
 
 
@@ -44,7 +48,28 @@ double func(double *x, double *par) {
 void peakFitter(const char* fileName,const char* detector,int low, int high){
 
 	TFile *fyield = new TFile(fileName);
+
+
+	TFile *fbackground = new TFile("background/run0422.root");
+	TVectorD *run_t0 = static_cast<TVectorD*>(fyield->Get("lastTimeStampSeconds-0"));
+	TVectorD *back_t0 = static_cast<TVectorD*>(fbackground->Get("lastTimeStampSeconds-0"));
+	// Run time and background time for each board
+	double runTime0 = (*run_t0)[0];
+	double backTime0 = (*back_t0)[0];
+	// Scale background spectra to ratio of run time
+	double scale0 = runTime0/backTime0;
+
+
 	TH1D *hyield = static_cast<TH1D*>(fyield->Get(detector));
+
+
+	TH1D *ysubtracted = static_cast<TH1D*>(hyield->Clone("ysubtracted"));
+	HBACK = static_cast<TH1D*>(fbackground->Get(detector));
+	HBACK->SetLineColor(kBlack);
+	HBACK->Scale(scale0);	// Scale the background
+	HBACK->SetDirectory(0);
+
+
 	TH1D *qcharge = static_cast<TH1D*>(fyield->Get("h1-7"));
 	double charge = qcharge->GetEntries();
 	gStyle->SetOptFit(1111);
@@ -55,7 +80,32 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	c0->cd(1);
 
 	hyield->Draw();
+	HBACK->Draw("SAME");
 	hyield->GetXaxis()->SetRangeUser(500,1400);
+
+
+	// Background subtracted spectrum
+	c0->cd(2);
+
+
+    // Recalculate errors manually
+	for(int i = 0; i<=ysubtracted->GetNbinsX(); i++){
+		double yval = ysubtracted->GetBinContent(i);
+		double yval2 = HBACK->GetBinContent(i);	//fback->Eval(ysubtracted->GetBinCenter(i));
+		double yerr = ysubtracted->GetBinError(i);
+		double yerr2 = HBACK->GetBinError(i);	// Takes the error from the bg spectrum
+
+		ysubtracted->SetBinContent(i,yval-yval2);
+		ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
+	}
+	// Rebinning
+	const int nbins = ysubtracted->GetXaxis()->GetNbins();
+	double new_bins[nbins+1];
+	for(int i=0; i <= nbins; i++){
+		new_bins[i] = ysubtracted->GetBinLowEdge(i+1);
+	}
+	ysubtracted->SetBins(nbins, new_bins);
+
 
 
 	TF1 *ffit = new TF1("ffit",func,low,high,6);
@@ -63,108 +113,67 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	ffit->SetNpx(500);
 	ffit->SetParameters(1,1,1,500,(low+high)/2,10);   //// give it good range
 
+	TF1 *fback = new TF1("fback",background,low,high,3);
+	fback->SetParNames("a0","a1","a2");
+	fback->SetLineColor(kCyan);
+	fback->SetNpx(1e5);
+
 	// ffit->SetParLimits(0,-1e3,1e3)
 	// ffit->SetParLimits(1,-15,15);
     ffit->FixParameter(2,0);			// Makes it a linear background (0)*x^2
     ffit->SetParLimits(3,0,1e6);
     ffit->SetParLimits(4,low,high);	///// give it good range
-    ffit->SetParLimits(5,2.5,20);
-
+    ffit->SetParLimits(5,2.5,55);
 
 	ffit->SetLineColor(kRed);
-	hyield->Fit("ffit","QR");
 
+	// Perform the fit
+	TFitResultPtr r = ysubtracted->Fit("ffit","SQR");  // TFitResultPtr contains the TFitResult
+	TMatrixDSym cov = r->GetCovarianceMatrix();   //  to access the covariance matrix
 
-
-
-	// int fitStatus1 = hyield->Fit("ffit","QR");
-
-
-
-
-
-	TF1 *back = new TF1("back",background,low,high,3);
-	back->SetLineColor(kMagenta);
-	back->SetNpx(500);
-
-	TF1 *peak = new TF1("peak",gauss,low,high,3);
-	peak->SetLineColor(kBlue);
-	peak->SetNpx(500);
-
-	double par[6];
-	ffit->GetParameters(par);
-	back->SetParameters(par[0],par[1],par[2]);
-	peak->SetParameters(par[3],par[4],par[5]);
-
-	back->Draw("SAME");
-	peak->Draw("SAME");
-
-
-	c0->cd(2);
-	// c0->Flush();
-
-
-	TH1D *ysubtracted = new TH1D();
-	ysubtracted = (TH1D*)hyield->Clone("ysubtracted");
-	c0->Update();
-    c0->Flush();
-
-	// Calculate errors for whole histogram
-	for(int i = 0; i<=ysubtracted->GetNbinsX(); i++){
-		double yval = ysubtracted->GetBinContent(i);
-		double yval2 = back->Eval(ysubtracted->GetBinCenter(i));
-		double yerr = ysubtracted->GetBinError(i);
-		double yerr2 = hyield->GetBinError(i);
-
-		ysubtracted->SetBinContent(i,yval-yval2);
-		ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
-	}
-
-
-	const int nbins = ysubtracted->GetXaxis()->GetNbins();
-	double new_bins[nbins+1];
-
-	for(int i=0; i <= nbins; i++){
-	new_bins[i] = ysubtracted->GetBinLowEdge(i+1);
-	}
-
-	ysubtracted->SetBins(nbins, new_bins);
-	ysubtracted->GetXaxis()->SetRangeUser(par[4] - 3*par[5] , par[4] + 3*par[5]);
-
-	int lower = par[4]-3*par[5];
-	int upper = par[4]+3*par[5];
-	double area = 0;
-	double err = 0;
-	double area_err = 0;
-
-	// Calculate area and its error
-	for(int i = lower; i<=upper; i++){
-		area += ysubtracted->GetBinContent(i);
-		err += (ysubtracted->GetBinError(i))*(ysubtracted->GetBinError(i));
-	}
-	area_err = TMath::Sqrt(err);
-
-	ysubtracted->Fit("ffit","0Q");	// "0" Don't draw the previous fit
+	// Draw the background subtracted histogram
+	ysubtracted->GetXaxis()->SetRangeUser(low-20,high+20);
 	ysubtracted->Draw();
 
-	string runNum = fileName;
-	// cout << "________________________________________________________" << endl;
-	// cout << runNum << endl;
-	// runNum = runNum.substr(4,3);
-	runNum = runNum.substr(73,3);
-	// cout << runNum << endl;
-	string detNum = detector;
 
-	c0->SaveAs(Form("peakAreasP2/run0%s/det_%s_Fit.pdf",runNum.c_str(),detNum.c_str()));
+	// Draw fits
+	ffit->Draw("SAME");
 
-	double yield = area/charge;
+	// Store fit parameters in an array
+	double par[6];
+	ffit->GetParameters(par);
+	fback->SetParameters(par[0],par[1],par[2]);
+	fback->Draw("SAME");
+
+
+	// Calculate the peak area and error
+	// double area_err;
+	// double area = ysubtracted->IntegralAndError(par[4]-3*par[5],par[4]+3*par[5],area_err,"width");
+	// double mean = par[4];
+	// double sigma = par[5];
+	double A = par[3];
+	double A_err = ffit->GetParError(3);
+
+	double yield = A/charge;
 	// cout << yield << " " <<typeid(area).name() << " " <<typeid(charge).name()<<endl;
-	double yield_err = area_err/charge;
+	double yield_err = A_err/charge;
 
 	double chi2NDF = ffit->GetChisquare()/ffit->GetNDF();
 	double goodFit;
-	if (chi2NDF <= 2) goodFit = 0;
+	if (chi2NDF <= 2 && chi2NDF >=.5 ) goodFit = 0;
 	else goodFit = 1;
+
+	string runNum = fileName;
+	cout << "________________________________________________________" << endl;
+	// runNum = runNum.substr(4,3);
+	runNum = runNum.substr(73,3);
+	cout << "Run: "<<runNum << endl;
+	cout << "Chi2: "<<chi2NDF << endl;
+	cout << "________________________________________________________" << endl;
+	string detNum = detector;
+
+	c0->SaveAs(Form("peakAreasP2/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
+
 
 	ofstream myfile;
 	myfile.open ("peakAreasP2.csv",std::ios::app);
@@ -175,6 +184,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 
 	c0->Clear();
 	fyield->Close();
+	fbackground->Close();
 	delete c0;
 	delete ffit;
 	gROOT->Reset();
@@ -195,7 +205,7 @@ int peakAreasP2(){
 	gSystem->Exec(Form("mkdir peakAreasP2"));
 
 	ofstream myfile;
-	myfile.open ("peakAreasP2.csv",std::ios::app);
+	myfile.open ("peakAreasP2.csv",std::ios::out);
 	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Fit Status"<<"\n";
 	myfile.close();
 
@@ -227,7 +237,6 @@ int peakAreasP2(){
 			// const char *files = Form("run0%d.root",i);
 			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char *detect = Form("h0-%d",j);
-			// cout <<files << "  "<< detect <<endl;
 			if(j==0){
 				p2 = 927;
 			}
@@ -250,18 +259,17 @@ int peakAreasP2(){
 				p2 = 1008;
 			}
 			else if(j==7){
-				p2 = 1013;
+				p2 = 1014;
 			}
-			peakFitter(files,detect,p2-50,p2+50);
+			peakFitter(files,detect,p2-60,p2+60);
 
 		}
 		for(int k=0;k<5;k++){
 			// const char *files = Form("run0%d.root",i);
 			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char*detect = Form("h1-%d",k);
-			// cout <<files << "  "<< detect <<endl;
 			if(k==0){
-				p2 = 999;
+				p2 = 1000;
 			}
 			else if(k==1){
 				p2 = 1010;
@@ -270,12 +278,12 @@ int peakAreasP2(){
 				p2 = 1019;
 			}
 			else if(k==3){
-				p2 = 995;
+				p2 = 996;
 			}
 			else if(k==4){
 				p2 = 1000;
 			}
-			peakFitter(files,detect,p2-50,p2+50);
+			peakFitter(files,detect,p2-60,p2+60);
 		}
 	}
 

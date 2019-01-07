@@ -1,4 +1,3 @@
-
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -14,7 +13,7 @@ using std::vector;
 #include "TH1D.h"
 #include "TMath.h"
 #include "TString.h"
-#include "TVectorD.h" //
+#include "TVectorD.h"
 #include "TCanvas.h"
 #include "TStyle.h"
 
@@ -68,25 +67,15 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 	double scale0 = runTime0/backTime0;
 
 
-	// Fit definitions
-	TF1 *ffit = new TF1("ffit",func,low,high,6);
-	ffit->SetParNames("a0","a1","a2","norm","mean","sigma");
-	ffit->SetLineColor(kGreen);
-	ffit->SetNpx(1e5);
-
-	TF1 *fback = new TF1("fback",bgfunc,low,high,3);
-	fback->SetParNames("a0","a1","a2");
-	fback->SetLineColor(kCyan);
-	fback->SetNpx(1e5);
+	// Initial guess of centroid position
+	double centroid = (low+high)/2;
 
 
 	// Get histograms from root file
 	TH1D *hyield = static_cast<TH1D*>(fyield->Get(detector));
-	TH1D *ysubtracted = new TH1D();
-	ysubtracted = (TH1D*)hyield->Clone("ysubtracted");
-
+	TH1D *ysubtracted = static_cast<TH1D*>(hyield->Clone("ysubtracted"));
 	HBACK = static_cast<TH1D*>(fbackground->Get(detector));
-	HBACK->SetLineColor(kViolet);
+	HBACK->SetLineColor(kBlack);
 	HBACK->Scale(scale0);	// Scale the background
 	HBACK->SetDirectory(0);
 	gStyle->SetOptFit(1111);
@@ -103,37 +92,6 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 	hyield->Draw();			// spectrum
 	HBACK->Draw("SAME");	// background
 	hyield->GetXaxis()->SetRangeUser(500,2500);
-	ffit->GetXaxis()->SetRangeUser(500,2500);
-	fback->GetXaxis()->SetRangeUser(500,2500);
-
-
-	// Initial guess of parameters
-	double centroid = (low+high)/2;
-	ffit->SetParameters(0,0.9,0,500,centroid,10);
-
-
-    // Set parameter limits (parameter[i],min,max) and fix parameters
-	ffit->FixParameter(2,0);			// Makes it a linear background (0)*x^2
-    ffit->SetParLimits(3,0,1e6);		// Peak Area
-	ffit->SetParLimits(4,low,high);		// Peak Centroid
-    ffit->SetParLimits(5,2,55);			// Peak Width
-
-
-
-	hyield->Fit("ffit","QR"); // R =  Use the range specified in the function \
-                                range										  \
-								Q = suppress fit print statements
-
-
-	// Draw fits
-	ffit->Draw("SAME");
-	fback->Draw("LSAME");
-
-
-	// Store fit parameters in an array
-	double par[6];
-	ffit->GetParameters(par);
-	fback->SetParameters(par[0],par[1],par[2]);
 
 
 	// Background subtracted spectrum
@@ -143,9 +101,9 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
     // Recalculate errors manually
 	for(int i = 0; i<=ysubtracted->GetNbinsX(); i++){
 		double yval = ysubtracted->GetBinContent(i);
-		double yval2 = fback->Eval(ysubtracted->GetBinCenter(i));
+		double yval2 = HBACK->GetBinContent(i);	//fback->Eval(ysubtracted->GetBinCenter(i));
 		double yerr = ysubtracted->GetBinError(i);
-		double yerr2 = HBACK->GetBinError(i);
+		double yerr2 = HBACK->GetBinError(i);	// Takes the error from the bg spectrum
 
 		ysubtracted->SetBinContent(i,yval-yval2);
 		ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
@@ -161,10 +119,57 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 	ysubtracted->SetBins(nbins, new_bins);
 
 
+	// Fit definitions
+	TF1 *ffit = new TF1("ffit",func,low,high,6);
+	ffit->SetParNames("a0","a1","a2","norm","mean","sigma");
+	ffit->SetLineColor(kGreen);
+	ffit->SetNpx(1e5);
+
+	TF1 *fback = new TF1("fback",bgfunc,low,high,3);
+	fback->SetParNames("a0","a1","a2");
+	fback->SetLineColor(kCyan);
+	fback->SetNpx(1e5);
+
+
+	// Initial guess of parameters
+	ffit->SetParameters(0,0.9,0,5000,centroid,10);
+
+	ffit->FixParameter(2,0);			// Makes it a linear background (0)*x^2
+    ffit->SetParLimits(3,0,1e6);		// Peak Area
+	ffit->SetParLimits(4,low,high);		// Peak Centroid
+    ffit->SetParLimits(5,2,55);			// Peak Width
+
+
+	// Perform the fit
+	TFitResultPtr r = ysubtracted->Fit("ffit","SQR");  // TFitResultPtr contains the TFitResult
+	TMatrixDSym cov = r->GetCovarianceMatrix();   //  to access the covariance matrix
+
+	// cout << TMath::Sqrt(cov[3][3]) << " " << r->ParError(3) << endl;
+
+
 	// Draw the background subtracted histogram
-	ysubtracted->GetXaxis()->SetRangeUser(low,high);
+	ysubtracted->GetXaxis()->SetRangeUser(low-20,high+20);
 	ysubtracted->Draw();
 
+
+	// Draw fits
+	ffit->Draw("SAME");
+
+	// Store fit parameters in an array
+	double par[6];
+	ffit->GetParameters(par);
+	fback->SetParameters(par[0],par[1],par[2]);
+	fback->Draw("SAME");
+
+/*
+	// Plot markers showing interval of integration
+	TBox *box1 = new TBox(par[4]-3*par[5]-.25,-5,par[4]-3*par[5]+.25,100);
+	TBox *box2 = new TBox(par[4]+3*par[5]-.25,-5,par[4]+3*par[5]+.25,100);
+	box1->SetFillColor(2);
+	box2->SetFillColor(2);
+	box1->Draw("SAME");
+	box2->Draw("SAME");
+// */
 
 	// Calculate the peak area and error
 	string detNum = detector;
@@ -172,10 +177,19 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 	double area = ysubtracted->IntegralAndError(par[4]-3*par[5],par[4]+3*par[5],area_err,"width");
 	double mean = par[4];
 	double sigma = par[5];
+	double A = par[3];
+	double A_err = ffit->GetParError(3);
+
+
+	// cout<<area<<"\t"<<A<<endl;
+	// cout <<area_err<<"\t"<<area_err/area<<"\t"<<A_err<<"\t"<<A_err/A<<endl;
+	area = A;
+	area_err = A_err;
+
 
 	// Save fits and calibration information
 	if (loop==0) {
-		c0->SaveAs(Form("calPlots/60Co_1173peak/det_%s_Fit.pdf",detNum.c_str()));
+		c0->SaveAs(Form("calPlots/60Co_1173peak/det_%s_Fit.png",detNum.c_str()));
 
 		ofstream myfile;
 		myfile.open ("60Co_1173cal.csv",std::ios::app);
@@ -184,7 +198,7 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 		myfile.close();
 	}
 	else if (loop==1) {
-		c0->SaveAs(Form("calPlots/60Co_1332peak/det_%s_Fit.pdf",detNum.c_str()));
+		c0->SaveAs(Form("calPlots/60Co_1332peak/det_%s_Fit.png",detNum.c_str()));
 
 		ofstream myfile;
 		myfile.open ("60Co_1332cal.csv",std::ios::app);
@@ -193,7 +207,7 @@ void calibration(const char* fileName,const char* detector,int low, int high, in
 		myfile.close();
 	}
 	else if (loop==2) {
-		c0->SaveAs(Form("calPlots/137Cs_661peak/det_%s_Fit.pdf",detNum.c_str()));
+		c0->SaveAs(Form("calPlots/137Cs_661peak/det_%s_Fit.png",detNum.c_str()));
 
 		ofstream myfile;
 		myfile.open ("137Cs_661cal.csv",std::ios::app);
@@ -227,12 +241,21 @@ int effCalibration(){
 
 		const char *file = fileLoc[i];
 
-		int low1173[] = {1040,1125,1140,1116,1090,1145,1130,1135,1120,1138,1140,1113,1123};
-		int high1173[] = {1100,1200,1205,1183,1155,1220,1200,1210,1190,1205,1215,1190,1190};
-		int low1332[] = {1180,1280,1290,1265,1235,1300,1280,1285,1270,1290,1295,1270,1280};
-		int high1332[] = {1240,1350,1360,1343,1310,1380,1360,1365,1350,1360,1380,1350,1350};
-		int low661[] = {590,630,645,634,615,647,638,638,632,638,638,619,630};
-		int high661[] = {630,675,685,675,662,690,687,682,675,677,685,672,675};
+		// Wider fits to capture more background
+		int low1173[] = {1030,1115,1136,1100,1070,1140,1120,1120,1100,1120,1140,1100,1110};
+		int high1173[] = {1110,1200,1210,1200,1170,1230,1220,1220,1200,1220,1240,1200,1200};
+		int low1332[] = {1170,1260,1275,1250,1220,1280,1270,1270,1260,1280,1270,1260,1260};
+		int high1332[] = {1250,1360,1375,1360,1320,1400,1370,1380,1360,1370,1410,1360,1360};
+		int low661[] = {570,623,637,625,600,636,638,630,617,620,630,610,620};
+		int high661[] = {650,690,700,690,675,705,690,700,690,690,700,695,685};
+
+		// // Tight fits
+		// int low1173[] = {1040,1123,1137,1120,1090,1145,1130,1135,1120,1138,1136,1113,1123};
+		// int high1173[] = {1100,1194,1205,1190,1155,1220,1200,1210,1190,1205,1222,1190,1190};
+		// int low1332[] = {1180,1280,1288,1269,1237,1298,1283,1290,1270,1290,1297,1268,1275};
+		// int high1332[] = {1243,1350,1362,1346,1312,1380,1357,1367,1350,1360,1380,1350,1350};
+		// int low661[] = {590,628,646,631,615,645,638,638,630,638,638,619,630};
+		// int high661[] = {630,681,690,680,662,695,682,688,680,677,690,677,675};
 
 		// 1173 keV gamma
 		if (strcmp(file,"60Co/24Mg_run/run0419.root") == 0 && i == 0){
@@ -240,7 +263,7 @@ int effCalibration(){
 			high = high1173;
 
 			ofstream myfile;
-			myfile.open ("60Co_1173cal.csv",std::ios::app);
+			myfile.open ("60Co_1173cal.csv",std::ios::out);
 			myfile<<"Detector"<<","<<"Centroid"<<","<<"Width"<<","<<"Area"<<","
 					<<"Area err"<<","<<"Runtime"<<"\n";
 			myfile.close();
@@ -252,7 +275,7 @@ int effCalibration(){
 			high = high1332;
 
 			ofstream myfile;
-			myfile.open ("60Co_1332cal.csv",std::ios::app);
+			myfile.open ("60Co_1332cal.csv",std::ios::out);
 			myfile<<"Detector"<<","<<"Centroid"<<","<<"Width"<<","<<"Area"<<","
 					<<"Area err"<<","<<"Runtime"<<"\n";
 			myfile.close();
@@ -264,7 +287,7 @@ int effCalibration(){
 			high = high661;
 
 			ofstream myfile;
-			myfile.open ("137Cs_661cal.csv",std::ios::app);
+			myfile.open ("137Cs_661cal.csv",std::ios::out);
 			myfile<<"Detector"<<","<<"Centroid"<<","<<"Width"<<","<<"Area"<<","
 					<<"Area err"<<","<<"Runtime"<<"\n";
 			myfile.close();

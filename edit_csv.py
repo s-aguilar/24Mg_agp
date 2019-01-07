@@ -13,14 +13,14 @@ runToEalpha = {pRun[i]:pEalpha[i] for i in range(len(pRun))}
 
 Ealpha = []
 
-for ind, val in df1['Run'].iteritems():
+for ind, val in df2['Run'].iteritems():
     val = np.int64(val[4:])
     Ealpha.append(runToEalpha[val])
 
 
 # Append new columns (E alpha) to dataframe, preserving the index
 df1 = df1.assign(Ea=pd.Series(Ealpha,index=df1.index).values)
-df2 = df2.assign(Ea=pd.Series(Ealpha,index=df1.index).values)
+df2 = df2.assign(Ea=pd.Series(Ealpha,index=df2.index).values)
 
 df1.to_csv('P1Yields.csv', sep=',')
 df2.to_csv('P2Yields.csv', sep=',')

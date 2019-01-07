@@ -88,6 +88,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 
 	TH1D *hyield = static_cast<TH1D*>(fyield->Get(detector));
 	HBACK = static_cast<TH1D*>(fbackground->Get(detector));
+	HBACK->SetLineColor(kBlack);
 	HBACK->Scale(scale0);
 	HBACK->SetDirectory(0);
 
@@ -101,17 +102,31 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	hyield->Draw();
 	hyield->GetXaxis()->SetRangeUser(500,1400);
 	HBACK->Draw("SAME");
-	HBACK->SetLineColor(kViolet);
 
+	c0->cd(2);
 
 	// Subtract the intrinsic background spectrum
 	TH1D *ysubtracted = new TH1D();
 	ysubtracted = (TH1D*)hyield->Clone("ysubtracted");
-	c0->Update();
-    c0->Flush();
 
 
+	// Recalculate errors manually
+	for(int i = 0; i<=ysubtracted->GetNbinsX(); i++){
+		double yval = ysubtracted->GetBinContent(i);
+		double yval2 = HBACK->GetBinContent(i);	//fback->Eval(ysubtracted->GetBinCenter(i));
+		double yerr = ysubtracted->GetBinError(i);
+		double yerr2 = HBACK->GetBinError(i);	// Takes the error from the bg spectrum
 
+		ysubtracted->SetBinContent(i,yval-yval2);
+		ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
+	}
+	// Rebinning
+	const int nbins = ysubtracted->GetXaxis()->GetNbins();
+	double new_bins[nbins+1];
+	for(int i=0; i <= nbins; i++){
+		new_bins[i] = ysubtracted->GetBinLowEdge(i+1);
+	}
+	ysubtracted->SetBins(nbins, new_bins);
 
 
 	TF1 *ffit = new TF1("ffit",func,low,high,9);
@@ -130,98 +145,56 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
     ffit->SetParLimits(8,2.5,15);
 
 	ffit->SetLineColor(kRed);
-	hyield->Fit("ffit","QR");
+
+	TF1 *fback = new TF1("fback",background,low,high,3);
+	fback->SetParNames("a0","a1","a2");
+	fback->SetLineColor(kCyan);
+	fback->SetNpx(1e5);
 
 
-	// int fitStatus1 = hyield->Fit("ffit","QR");
-	TF1 *back = new TF1("back",background,low,high,3);
-	back->SetLineColor(kMagenta);
-	back->SetNpx(500);
+	// Perform the fit
+	TFitResultPtr r = ysubtracted->Fit("ffit","SQR");  // TFitResultPtr contains the TFitResult
+	TMatrixDSym cov = r->GetCovarianceMatrix();   //  to access the covariance matrix
 
-	TF1 *peak = new TF1("peak",double_gauss,low,high,6);
-	peak->SetLineColor(kBlue);
-	peak->SetNpx(500);
+	// Draw the background subtracted histogram
+	ysubtracted->GetXaxis()->SetRangeUser(low-20,high+20);
+	ysubtracted->Draw();
 
+
+	// Draw fits
+	ffit->Draw("SAME");
+
+	// Store fit parameters in an array
 	double par[9];
 	ffit->GetParameters(par);
-	back->SetParameters(par[0],par[1],par[2]);
-	peak->SetParameters(par[3],par[4],par[5],par[6],par[7],par[8]);
-
-	back->Draw("SAME");
-	peak->Draw("SAME");
+	fback->SetParameters(par[0],par[1],par[2]);
+	fback->Draw("SAME");
 
 
-	c0->cd(2);
-	// c0->Flush();
+	double A = par[3];
+	double A_err = ffit->GetParError(3);
 
-
-	// Calculate errors for whole histogram
-	for(int i = 0; i<=ysubtracted->GetNbinsX(); i++){
-		double yval = ysubtracted->GetBinContent(i);
-		double yval2 = back->Eval(ysubtracted->GetBinCenter(i));
-		double yerr = ysubtracted->GetBinError(i);
-		double yerr2 = hyield->GetBinError(i);
-
-		ysubtracted->SetBinContent(i,yval-yval2);
-		ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
-	}
-
-	const int nbins = ysubtracted->GetXaxis()->GetNbins();
-	double new_bins[nbins+1];
-
-	for(int i=0; i <= nbins; i++){
-	new_bins[i] = ysubtracted->GetBinLowEdge(i+1);
-	}
-
-	ysubtracted->SetBins(nbins, new_bins);
-	ysubtracted->GetXaxis()->SetRangeUser(low,high);
-
-
-/*
-	int lower = par[4]-3*par[5];
-	int upper = par[4]+3*par[5];
-	int area = 0;
-	double err = 0;
-	double area_err = 0;
-
-	// Calculate area and its error
-	for(int i = lower; i<=upper; i++){
-		area += ysubtracted->GetBinContent(i);
-		err += (ysubtracted->GetBinError(i))*(ysubtracted->GetBinError(i));
-	}
-	area_err = TMath::Sqrt(err);
-*/
-
+	double yield = A/charge;
+	// cout << yield << " " <<typeid(area).name() << " " <<typeid(charge).name()<<endl;
+	double yield_err = A_err/charge;
 
 	double chi2NDF = ffit->GetChisquare()/ffit->GetNDF();
-	double A_err = ffit->GetParError(3);
-	double sig_err = ffit->GetParError(5);
-	double area = par[3]*TMath::Sqrt(2*TMath::Pi()*par[5]*par[5]);
-	double area_err = TMath::Sqrt(2*TMath::Pi()*((par[5]*A_err)*(par[5]*A_err)+(par[3]*sig_err)*(par[3]*sig_err)));
-
-	double yield = area/charge;
-	double yield_err = area_err/charge;
-	// cout << chi2NDF << endl;
-	int goodFit;
-
-	if (chi2NDF <= 2) goodFit = 0;
+	double goodFit;
+	if (chi2NDF <= 2 && chi2NDF >=.5 ) goodFit = 0;
 	else goodFit = 1;
 
 
-	// ysubtracted->Fit("ffit","0Q");	// "0" Don't draw the previous fit
-	ysubtracted->Draw();
-
 	string runNum = fileName;
-	// cout << "________________________________________________________" << endl;
-	// cout << runNum << endl;
+	cout << "________________________________________________________" << endl;
 	// runNum = runNum.substr(4,3);
 	runNum = runNum.substr(73,3);
-	// cout << runNum << endl;
+	cout << "Run: "<<runNum << endl;
+	cout << "Chi2: "<<chi2NDF << endl;
+	cout << "________________________________________________________" << endl;
 	string detNum = detector;
 
-	c0->SaveAs(Form("peakAreasP1/run0%s/det_%s_Fit.pdf",runNum.c_str(),detNum.c_str()));
+	c0->SaveAs(Form("peakAreasP1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
 
-// /*
 	ofstream myfile;
 	myfile.open ("peakAreasP1.csv",std::ios::app);
 	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<
@@ -229,7 +202,7 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	myfile.close();
 
 
-// */
+
 	c0->Clear();
 	fyield->Close();
 	fbackground->Close();
@@ -253,12 +226,12 @@ int peakAreasP1(){
 	gSystem->Exec(Form("mkdir peakAreasP1"));
 
 	ofstream myfile;
-	myfile.open ("peakAreasP1.csv",std::ios::app);
+	myfile.open ("peakAreasP1.csv",std::ios::out);
 	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Fit Status"<<"\n";
 	myfile.close();
 
 	// 159 to 410
-	for(int i=159;i<410;i++){
+	for(int i=159;i<410;i++){///////////////////////
 
 		if(i==163) continue;
 		else if(i==164) continue;
@@ -286,7 +259,6 @@ int peakAreasP1(){
 			// const char *files = Form("run0%d.root",i);
 			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char *detect = Form("h0-%d",j);
-			// cout <<files << "  "<< detect <<endl;
 			if(j==0){
 				p1 = 773;
 			}
@@ -318,7 +290,6 @@ int peakAreasP1(){
 			// const char *files = Form("run0%d.root",i);
 			const char *files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			const char*detect = Form("h1-%d",k);
-			// cout <<files << "  "<< detect <<endl;
 			if(k==0){
 				p1 = 831;
 			}
