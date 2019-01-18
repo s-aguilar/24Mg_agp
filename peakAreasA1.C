@@ -7,7 +7,6 @@ using std::string;
 
 #include <unistd.h>
 
-
 #include "TROOT.h"
 #include "TF1.h"
 #include "TFile.h"
@@ -17,42 +16,17 @@ using std::string;
 #include "TVectorD.h"
 #include "TCanvas.h"
 #include "TStyle.h"
+#include "TRandom3.h"
 
+// Fitting routines
+#include "fitFunctions.h"
 
 //vector global for a background histogram
 TH1D *HBACK;
 
 
-/*=============================FITTING=======================================*/
 
-double background(double *x, double *par){
-	/*
-	COEFFICIENTS:
-	===============
-	constant = par[0]
-	linear = par[1]
-	quadratic = par[2]
-	// */
-	return par[0]+par[1]*x[0]+par[2]*x[0]*x[0];
-}
-
-
-double gauss(double *x, double *par){
-	/*
-	norm = par[0]
-	mean = par[1]
-	sigma = par[2]
-	// */
-	return par[0]*TMath::Gaus(x[0],par[1],par[2],kTRUE);
-}
-
-
-double func(double *x, double *par) {
-   return background(x,par) + gauss(x,&par[3]);
-}
-
-
-void peakFitter(const char* fileName,const char* detector,int low, int high){
+void peakFitter(const char* fileName,const char* fileBack,const char* detector,int low, int high){
 
 	TFile *fyield = new TFile(fileName);
 	TFile *fbackground = new TFile("calibration/background/run0422.root");
@@ -120,8 +94,6 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 	ffit->SetNpx(500);
 	ffit->SetParameters(1,1,0,500,(low+high)/2,10);   //// give it good range
 
-	// ffit->SetParLimits(0,-1e3,1e3)
-	// ffit->SetParLimits(1,-15,15);
 	ffit->FixParameter(2,0);
 	ffit->SetParLimits(3,0,1e6);
     ffit->SetParLimits(4,low,high);	///// give it good range
@@ -184,18 +156,19 @@ void peakFitter(const char* fileName,const char* detector,int low, int high){
 				","<<yield<<","<<yield_err<<","<<goodFit<<"\n";
 	myfile.close();
 
-
-
 	c0->Clear();
 	fyield->Close();
+	delete fyield;
 	fbackground->Close();
+	delete fbackground;
+
 	delete c0;
 	delete ffit;
+	delete fback;
 	gROOT->Reset();
 
 }
 
-/*===========================================================================*/
 
 
 

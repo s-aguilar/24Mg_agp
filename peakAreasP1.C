@@ -17,57 +17,17 @@ using std::string;
 #include "TVectorD.h"
 #include "TCanvas.h"
 #include "TStyle.h"
+#include "TRandom3.h"
 
+// Fitting routines
+#include "fitFunctions.h"
 
 //vector global for a background histogram
 TH1D *HBACK;
 
 
-/*=============================FITTING=======================================*/
 
-double background(double *x, double *par){
-	/*
-	COEFFICIENTS:
-	===============
-	constant = par[0]
-	linear = par[1]
-	quadratic = par[2]
-	// */
-	return par[0]+par[1]*x[0]+par[2]*x[0]*x[0];
-}
-
-
-double gauss(double *x, double *par){
-	/*
-	norm = par[0]
-	mean = par[1]
-	sigma = par[2]
-	// */
-	return par[0]*TMath::Gaus(x[0],par[1],par[2],kTRUE);
-}
-
-double double_gauss(double*x, double *par){
-	/*
-	norm1 = par[0]
-	mean1 = par[1]
-	sigma1 = par[2]
-	norm2 = par[3]
-	mean2 = par[4]
-	sigma2 = par[5]
-	// */
-	double g1 = par[0]*TMath::Gaus(x[0],par[1],par[2],kTRUE);
-	double g2 = par[3]*TMath::Gaus(x[0],par[4],par[5],kTRUE);
-	return g1+g2;
-
-}
-
-double func(double *x, double *par) {
-
-   return background(x,par) + double_gauss(x,&par[3]);
-}
-
-
-void peakFitter(const char* fileName,const char* detector,int low, int high){
+void peakFitter(const char* fileName,const char* fileBack,const char* detector,int low, int high){
 
 	TFile *fyield = new TFile(fileName);
 	TFile *fbackground = new TFile("background/run0422.root");
