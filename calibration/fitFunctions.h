@@ -1,6 +1,9 @@
 #ifndef FITFUNCTIONS_H    // To make sure you don't declare the function more than once by including the header multiple times.
 #define FITFUNCTIONS_H
 
+#include <vector>
+using std::vector;
+
 #include "TF1.h"
 #include "TH1D.h"
 #include "TMath.h"
@@ -65,10 +68,10 @@ double fit_double_gauss_func(double *x, double *par) {
 						// FINDING PEAKS //
 						///////////////////
 
-double iterative_single_gauss_peak(int low, int high, TH1D *H0){
+vector < double > iterative_single_gauss_peak(int low, int high, TH1D *H0){
 	/* FOR FINDING PEAK POSITIONS:
 		Fit using fit_single_gauss_func, hone in on parameters and then
-		fit it again.
+		fit it again. Return peak position and its range.
 	*/
 
 	// FIRST ITERATION FIT
@@ -106,16 +109,22 @@ double iterative_single_gauss_peak(int low, int high, TH1D *H0){
 	ffit2->SetParLimits(3,0,1e6);
 	ffit2->SetParLimits(4,low,high);	// Peak centroid range
 	ffit2->SetParLimits(5,2.5,55);	// Std dev range
-	H0->Fit("ffit2","SQR");
+	H0->Fit("ffit2","SQRN0");
 
 
 	double peakPos = ffit2->GetParameter(4);
 
-	return peakPos;
+	// results format: [centroid,low,high]
+	vector < double > results;
+	results.push_back(peakPos);
+	results.push_back(low);
+	results.push_back(high);
+
+	return results;
 }
 
 
-double iterative_double_gauss_peak(int low,int high,TH1D *H0){
+vector <double> iterative_double_gauss_peak(int low,int high,TH1D *H0){
 	/* FOR FINDING PEAK POSITIONS:
 		Fit using fit_single_gauss_func, hone in on parameters and then
 		fit it again.
@@ -138,7 +147,6 @@ double iterative_double_gauss_peak(int low,int high,TH1D *H0){
 	ffit1->SetParLimits(8,2.5,15);
 
 	H0->Fit("ffit1","SQRN0");
-
 
 	// Store fit parameters
 	double par1[9];
@@ -165,7 +173,7 @@ double iterative_double_gauss_peak(int low,int high,TH1D *H0){
 
 
 	// Recalibrate range of integration
-	low = par1[4]-2.5*par1[5]; //
+	low = par1[4]-2*par1[5]; // Constrain left bound
 	high = par1[7]+3*par1[8];
 
 
@@ -181,7 +189,7 @@ double iterative_double_gauss_peak(int low,int high,TH1D *H0){
 	ffit2->SetParLimits(6,0,1e8);
 	ffit2->SetParLimits(8,2.5,15);
 
-	H0->Fit("ffit2","SQR");
+	H0->Fit("ffit2","SQRN0");
 
 	double peakPos = ffit2->GetParameter(4);
 
@@ -190,78 +198,88 @@ double iterative_double_gauss_peak(int low,int high,TH1D *H0){
 		peakPos = ffit2->GetParameter(7);
 	}
 
-	return peakPos;
+	// results format: [centroid,low,high]
+	vector < double > results;
+	results.push_back(peakPos);
+	results.push_back(low);
+	results.push_back(high);
+
+	return results;
 }
 /*===========================================================================*/
 
 
 
 
-// /*===========================================================================*/
-// 						///////////////////
-// 						// FITTING PEAKS //
-// 						///////////////////
-//
-// double *iterative_single_gauss_fit(int low, int high, TH1D *H0){
-// 	/* FOR FINDING PEAK POSITIONS:
-// 		Fit using fit_single_gauss_func, hone in on parameters and then
-// 		fit it again.
-// 		*/
-//
-// 	// FIRST ITERATION FIT
-// 	TF1 *ffit1 = new TF1("ffit1",fit_single_gauss_func,low,high,6);
-// 	ffit1->SetParNames("a0","a1","a2","norm","mean","sigma");
-// 	ffit1->SetNpx(500);
-// 	ffit1->SetParameters(1,1,1,4000,(low+high)/2,12);
-// 	ffit1->FixParameter(2,0);		// Makes it a linear background
-//     ffit1->SetParLimits(3,0,1e6);
-//     ffit1->SetParLimits(4,low,high);	// Peak centroid range
-//     ffit1->SetParLimits(5,2.5,55);	// Std dev range
-//
-// 	H0->Fit("ffit1","SQRN0");
-//
-// 	// Store fit parameters
-// 	double par1[6];
-// 	ffit1->GetParameters(par1);
-//
-// 	// Recalibrate range of integration
-// 	low = par1[4]-3*par1[5];
-// 	high = par1[4]+3*par1[5];
-//
-//
-// 	// SECOND ITERATION FIT
-// 	TF1 *ffit2 = new TF1("ffit2",fit_single_gauss_func,low,high,6);
-// 	ffit2->SetParNames("a0","a1","a2","norm","mean","sigma");
-// 	ffit2->SetNpx(500);
-// 	ffit2->SetParameters(par1);
-// 	ffit2->FixParameter(2,0);		// Makes it a linear background
-// 	ffit2->SetParLimits(3,0,1e6);
-// 	ffit2->SetParLimits(4,low,high);	// Peak centroid range
-// 	ffit2->SetParLimits(5,2.5,55);	// Std dev range
-// 	H0->Fit("ffit2","SQRN0");
-//
-// 	double par2[6];
-// 	double par2_err[6];
-//
-// 	ffit2->GetParameters(par2);
-// 	ffit2->GetParErrors(par2_err);
-//
-// 	double nested_results[2];
-// 	nested_results[0] = {par2};
-// 	nested_results[1] = {par2_err};
-// 	return nested_results;
-// }
-//
+/*===========================================================================*/
+						///////////////////
+						// FITTING PEAKS //
+						///////////////////
 
-// double *iterative_double_gauss_fit(int low, int high, TH1D *H0){
-// 	// Fit using fit_double_gauss_func, hone in on parameters and then\
-// 		fit it again.
-//
-// 	double blah[1];
-// 	blah[0]=1;
-// 	return blah;
-// }
+double *iterative_single_gauss_fit(int low, int high, TH1D *H0){
+	/* FOR Fitting PEAK POSITIONS:
+		Fit using fit_single_gauss_func, hone in on parameters and then
+		fit it again.
+		*/
 
+	// FIRST ITERATION FIT
+	TF1 *ffit1 = new TF1("ffit1",fit_single_gauss_func,low,high,6);
+	ffit1->SetParNames("a0","a1","a2","norm","mean","sigma");
+	ffit1->SetNpx(500);
+	ffit1->SetParameters(1,1,1,4000,(low+high)/2,12);
+	ffit1->FixParameter(2,0);		// Makes it a linear background
+    ffit1->SetParLimits(3,0,1e6);
+    ffit1->SetParLimits(4,low,high);	// Peak centroid range
+    ffit1->SetParLimits(5,2.5,55);	// Std dev range
+
+	H0->Fit("ffit1","SQRN0");
+
+	// Store fit parameters
+	double par1[6];
+	ffit1->GetParameters(par1);
+
+	// Recalibrate range of integration
+	low = par1[4]-3*par1[5];
+	high = par1[4]+3*par1[5];
+
+
+	// SECOND ITERATION FIT
+	TF1 *ffit2 = new TF1("ffit2",fit_single_gauss_func,low,high,6);
+	ffit2->SetParNames("a0","a1","a2","norm","mean","sigma");
+	ffit2->SetNpx(500);
+	ffit2->SetParameters(par1);
+	ffit2->FixParameter(2,0);		// Makes it a linear background
+	ffit2->SetParLimits(3,0,1e6);
+	ffit2->SetParLimits(4,low,high);	// Peak centroid range
+	ffit2->SetParLimits(5,2.5,55);	// Std dev range
+	H0->Fit("ffit2","SQRN0");
+
+	double par2[6];
+	const double *par2_err;
+
+	ffit2->GetParameters(par2);
+	par2_err = ffit2->GetParErrors();
+
+	// Results array contains the centroid and width parameter and their errors
+	// [centroid, width, centroid_err, width_err]
+	double *results = new double[4];
+	results[0] = par2[1];
+	results[1] = par2[2];
+	results[2] = par2_err[1];
+	results[3] = par2_err[2];
+	return results;
+}
+
+/*
+double *iterative_double_gauss_fit(int low, int high, TH1D *H0){
+	// Fit using fit_double_gauss_func, hone in on parameters and then\
+		fit it again.
+
+	double blah[1];
+	blah[0]=1;
+	return blah;
+}
+*/
 
 
 
