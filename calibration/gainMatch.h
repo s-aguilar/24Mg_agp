@@ -12,6 +12,8 @@ TH1D* gain_match(Double_t E1, Double_t E2, Double_t E1p, Double_t E2p, TH1D* H2,
 
 	// "linear" map
 	// E(Ep) = a*Ep + b
+	E2 = 0;
+	E2p = 0;
 	Double_t a = (E2 - E1)/(E2p - E1p);
 	Double_t b = E2 - a*E2p;
 

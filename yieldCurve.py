@@ -1,11 +1,26 @@
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+print('Attempting to create required directories: ')
+try:
+    os.mkdir('yieldPlots')
+    os.mkdir('yieldPlots/P1')
+    os.mkdir('yieldPlots/P2')
+    os.mkdir('yieldPlots/A1')
+except OSError:
+    print ("Directories already exist!")
+else:
+    print('DONE!')
+
+
 
 # Read in the data into dataframe
-df1 = pd.read_csv('P1Yields.csv')
-df2 = pd.read_csv('P2Yields.csv')
+df1 = pd.read_csv('Yields/P1/p1Yields.csv')
+df1 = df1.sort_values(by=['Ea'])
+# df2 = pd.read_csv('Yields/P2/p2Yields.csv')
+# df2 = df2.sort_values(by=['Ea'])
 # """
 # Extract the columns of the DataFrame as numpy arrays
 p1Run = df1['Run'].values
@@ -31,14 +46,15 @@ for det in detectors:
     maskDet = ( (df1['Detector']==det) & mask1Fit )
 
     plt.clf()
+    plt.plot(p1Ealpha[maskDet],p1Yield[maskDet],c='b',marker='.')
     plt.scatter(p1Ealpha[maskDet],p1Yield[maskDet],c='b',marker='.')
     # plt.errorbar(p1Ealpha[maskDet],p1Yield[maskDet],yerr=p1Yield_err[maskDet],fmt='b.')
     # plt.yscale('log')
+    plt.ylim(0,.5)
     plt.xlabel('$E_{\\alpha}$ (MeV)')
     plt.ylabel('Yield')
     plt.title('p1 %s'%det)
-    plt.savefig('yieldPlots/p1/p1_%s.png'%det,dpi=1200)
-    plt.clf()
+    plt.savefig('yieldPlots/P1/p1_%s.png'%det,dpi=900)
     # plt.show()
 # """
 
@@ -65,13 +81,12 @@ for det in detectors:
     maskDet = ( (df2['Detector']==det) & mask2Fit )
 
     plt.clf()
-    plt.scatter(p2Ealpha[maskDet],p2Yield[maskDet],c='b',marker='.')
+    plt.plot(p2Ealpha[maskDet],p2Yield[maskDet],c='b',marker='.')
     plt.errorbar(p2Ealpha[maskDet],p2Yield[maskDet],yerr=p2Yield_err[maskDet],fmt='b.')
     # plt.yscale('log')
     plt.xlabel('$E_{\\alpha}$ (MeV)')
     plt.ylabel('Yield')
     plt.title('p2 %s'%det)
-    plt.savefig('yieldPlots/p2/p2_%s.png'%det,dpi=1200)
-    plt.clf()
+    plt.savefig('yieldPlots/P2/p2_%s.png'%det,dpi=900)
     # plt.show()
 # """
