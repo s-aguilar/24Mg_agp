@@ -76,7 +76,7 @@ totalDecayEvents_137Cs = np.array(runtime_137Cs*currentActivity_137Cs)
 
 
 
-# """
+"""
 # Plot change in peak areas using different peak area methods
 print('\nPlotting change in efficiency using different peak area methods')
 start_time = time.time()
@@ -136,15 +136,13 @@ effErr_1332 = areaErr_1332/totalDecayEvents_60Co
 eff_661 = area_661/totalDecayEvents_137Cs
 effErr_661 = areaErr_661/totalDecayEvents_137Cs
 
-avgEff = (eff_661+eff_1332+eff_1173)/3
-avgEffErr = (effErr_661+effErr_1332+effErr_1173)/3
 
 
 # Angle (deg) for each detector, negative is beam left, positive is beam right
 #         00  01 02 03 04 05 06 07  10  11  12   13   14
 angle = np.array([120,105,90,45,30,15,0,-15,-30,-45,-90,-105,-120])
 
-# """
+"""
 # Plot efficiencies as function of angle for each calibration run
 print('\nPlotting efficiencies as function of angle for each calibration run')
 start_time = time.time()
@@ -200,7 +198,7 @@ labels = ["$10^{-4}$","$10^{-3}$","$10^{-2}$"]
 labelsx = ["$10^{2}$","$10^{3}$","$10^{4}$"]
 fit_x = np.array([e_gam[0],e_gam[1],e_gam[2]])
 
-# """
+"""
 for xx in range(13):
 
     # Normal plot
@@ -241,7 +239,7 @@ print('DONE!\t Process required: %f seconds'%(end_time - start_time))
 # """
 
 
-# """
+"""
 # Plot corresponding detector efficiencies
 print('\nPlotting matching detector efficiencies')
 start_time = time.time()
@@ -296,8 +294,8 @@ centroids = np.vstack((cent_661,cent_1173,cent_1332))
 split_cent = np.hsplit(centroids,13)
 
 e_p1 = 843.76   # keV
-e_p2 = 1014.56
-e_a1 = 1368.67
+e_p2 = 1014.52
+e_a1 = 1368.626
 
 p1 = []
 p2 = []
@@ -311,9 +309,56 @@ for yy in range(13):
     a1.append(det_interp(e_a1)[0])
 
 
-d = {'Det':detName,'Angle':angle,'p1':p1,'p2':p2,'a1':a1,'eff':avgEff,'eff err':avgEffErr}
+d = {'Det':detName,'Angle':angle,'p1':p1,'p2':p2,'a1':a1}
 df = pd.DataFrame(data=d)
 
 
 # Save new DataFrame to a csv file
 df.to_csv('csv/detectorEfficiencies.csv',sep=',',index=False)
+
+
+
+###############################################################################
+# Estimate the p1, p2 and a1 channel location per detector via linear interpolation
+###############################################################################
+
+# Get the centroid location info
+cent_1173 = np.array(df_60Co_1173['Centroid'])
+cent_1332 = np.array(df_60Co_1332['Centroid'])
+cent_661 = np.array(df_137Cs_661['Centroid'])
+
+centroids = np.vstack((cent_661,cent_1173,cent_1332))
+split_cent = np.hsplit(centroids,13)
+
+e_p1 = 843.76   # keV
+e_p2 = 1014.52
+e_a1 = 1368.626
+
+p1 = []
+p2 = []
+a1 = []
+
+# linear interpolation to relate energy to channel
+for yy in range(13):
+    det_interp = interp1d(e_gam,split_cent[yy].T,fill_value="extrapolate")
+    p1.append(det_interp(e_p1)[0])
+    p2.append(det_interp(e_p2)[0])
+    a1.append(det_interp(e_a1)[0])
+
+
+d = {'Det':detName,'Angle':angle,'p1':p1,'p2':p2,'a1':a1}
+df = pd.DataFrame(data=d)
+
+
+
+###############################################################################
+eff_peak = []
+fit_x = np.array([e_p1,e_p2,e_a1])
+for zz in range(13):
+    z = interp1d(e_gam,split_eff[zz].flatten(),fill_value="extrapolate")
+    fit_y = z(fit_x)
+    eff_peak.append(fit_y)
+
+eff_p1 = np.hsplit(eff_peak,13)
+dd = {'Det':detName,'Angle':angle,'p1':p1,'p2':p2,'a1':a1}
+dff = pd.DataFrame(data=dd)

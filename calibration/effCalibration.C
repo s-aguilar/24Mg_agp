@@ -109,7 +109,11 @@ void calibration(const char *fileName,const char *fileBack,const char *detector,
 	HBACK->SetLineColor(kGreen);
 	h2->SetLineColor(kRed);
 	h2->Draw("SAME");
+	// gPad->SetLogy();
+
+
 	if(fileNameLoop==0) hyield->GetXaxis()->SetRangeUser(800,1600);
+	// if(fileNameLoop==0) hyield->GetXaxis()->SetRangeUser(0,1600);
 	else if(fileNameLoop==1) hyield->GetXaxis()->SetRangeUser(1000,1600);
 	else if(fileNameLoop==2) hyield->GetXaxis()->SetRangeUser(500,800);
 
@@ -187,6 +191,7 @@ void calibration(const char *fileName,const char *fileBack,const char *detector,
 	box2->SetFillColor(2);
 	box1->Draw("SAME");
 	box2->Draw("SAME");
+	// gPad->SetLogy();
 
 
 	// Calculate the peak area and error
