@@ -48,6 +48,22 @@ double double_gauss_func(double*x, double *par){
 	*/
 
 	double g1 = par[0]*TMath::Gaus(x[0],par[1],par[2],kTRUE);
+	double g2 = par[3]*TMath::Gaus(x[0],par[4],par[5],kTRUE); /// par[5]->par[2]
+	return g1+g2;
+}
+
+
+double double_gauss_same_width_func(double*x, double *par){
+	/*
+	norm1 = par[0]
+	mean1 = par[1]
+	sigma1 = par[2]
+	norm2 = par[3]
+	mean2 = par[4]
+	sigma2 = par[5]
+	*/
+
+	double g1 = par[0]*TMath::Gaus(x[0],par[1],par[2],kTRUE);
 	double g2 = par[3]*TMath::Gaus(x[0],par[4],par[2],kTRUE); /// par[5]->par[2]
 	return g1+g2;
 }
@@ -64,6 +80,13 @@ double fit_double_gauss_func(double *x, double *par) {
     // Fit a double Gaussian with a Quadratic bakground, return array of parameters
 
    return background_func(x,par) + double_gauss_func(x,&par[3]);
+}
+
+
+double fit_double_gauss_same_width_func(double *x, double *par) {
+    // Fit a double Gaussian with a Quadratic bakground, return array of parameters
+
+   return background_func(x,par) + double_gauss_same_width_func(x,&par[3]);
 }
 
 
@@ -93,15 +116,15 @@ vector < double > iterative_single_gauss_peak(double low, double high, TH1D *H0)
     ffit1->SetParLimits(4,low,high);	// Peak centroid range
     ffit1->SetParLimits(5,2.5,55);	// Std dev range
 
-	H0->Fit("ffit1","SQRN0");
+	H0->Fit("ffit1","SQR");
 
 	// Store fit parameters
 	double par1[6];
 	ffit1->GetParameters(par1);
 
 	// Recalibrate range of integration
-	low = par1[4]-3*par1[5];
-	high = par1[4]+3*par1[5];
+	low = par1[4]-2*par1[5]; //3
+	high = par1[4]+2.5*par1[5]; //
 
 
 	// SECOND ITERATION FIT
@@ -109,15 +132,21 @@ vector < double > iterative_single_gauss_peak(double low, double high, TH1D *H0)
 	ffit2->SetParNames("a0","a1","a2","norm","mean","sigma");
 	ffit2->SetNpx(500);
 	ffit2->SetParameters(par1);
+	// ffit2->FixParameter(0,0);		// Makes it a linear background
+	// ffit2->FixParameter(1,0);		// Makes it a linear background
 	ffit2->FixParameter(2,0);		// Makes it a linear background
 	ffit2->SetParLimits(3,0,1e6);
 	ffit2->SetParLimits(4,low,high);	// Peak centroid range
 	ffit2->SetParLimits(5,2.5,55);	// Std dev range
-	H0->Fit("ffit2","SQRN0");
 
+	H0->Fit("ffit2","SQR");
 
 	double peakPos = ffit2->GetParameter(4);
 	double sigma = ffit2->GetParameter(5);
+
+	// Plot line marking peak position
+	TLine *line1 = new TLine(peakPos,0,peakPos,10000);
+	line1->Draw("SAME");
 
 	// results format: [centroid,low,high,sigma]
 	vector < double > results;
@@ -202,7 +231,7 @@ vector < double > iterative_double_gauss_peak(double low, double high, TH1D *H0)
 	ffit2->SetParLimits(6,0,1e8);
 	ffit2->SetParLimits(8,2.5,15);
 
-	H0->Fit("ffit2","SQRN0");
+	H0->Fit("ffit2","SQR");
 
 	double peakPos = ffit2->GetParameter(4);
 	double sigma = ffit2->GetParameter(5);
@@ -214,6 +243,10 @@ vector < double > iterative_double_gauss_peak(double low, double high, TH1D *H0)
 		peakPos = ffit2->GetParameter(7);
 		sigma = ffit2->GetParameter(8);
 	}
+
+	// Plot line marking peak position
+	TLine *line1 = new TLine(peakPos,0,peakPos,1000);
+	line1->Draw("SAME");
 
 	// results format: [centroid,low,high,sigma,other centroid]
 	vector < double > results;
@@ -634,8 +667,7 @@ vector < double > double_gauss_area(double peak1, double peak2, TH1D *H0){
 	double low = peak1-60;
 	double high = peak2+60;
 
-	// FIRST ITERATION FIT
-	TF1 *ffit1 = new TF1("ffit1",fit_double_gauss_func,low,high,9);
+	TF1 *ffit1 = new TF1("ffit1",fit_double_gauss_same_width_func,low,high,9);
 	ffit1->SetParNames("a0","a1","a2","norm1","mean1","sigma1","norm2","mean2","sigma2");
 	ffit1->SetNpx(500);
 	ffit1->SetParameters(0,0,0,4000,peak1,12,4000,peak2,12);
@@ -694,13 +726,70 @@ vector < double > double_gauss_area(double peak1, double peak2, TH1D *H0){
 
 	double chi2NDF = ffit1->GetChisquare()/ffit1->GetNDF();
 
-	// results format: [area, area err, chi2NDF, sigma1, sigma2]
+	// results format: [area, area err, chi2NDF, sigma1, sigma2, linear, offset]
 	vector < double > results;
 	results.push_back(ffit1->GetParameter(3));
 	results.push_back(ffit1->GetParError(3));
 	results.push_back(chi2NDF);
 	results.push_back(par1[5]);
 	results.push_back(par1[8]);
+	results.push_back(ffit1->GetParameter(1));
+	results.push_back(ffit1->GetParameter(0));
+
+	return results;
+
+}
+
+
+vector < double > single_gauss_area(double peak1, TH1D *H0){
+	/* FOR FINDING PEAK POSITIONS:
+		Fit using fit_double_gauss_func, hone in on parameters and then
+		fit it again. Return peak 1 area
+	*/
+
+	double low = peak1-60;
+	double high = peak1+60;
+
+	TF1 *ffit1 = new TF1("ffit1",fit_single_gauss_func,low,high,6);
+	ffit1->SetParNames("a0","a1","a2","norm","mean","sigma");
+	ffit1->SetNpx(500);
+	ffit1->SetParameters(0,0,0,4000,peak1,12);
+
+	// Turn off linear background terms, fix peak positions
+	ffit1->FixParameter(2,0);		// Makes it a linear background
+	ffit1->FixParameter(4,peak1);
+
+	ffit1->SetParLimits(3,0,1e6);	// Normalization
+	ffit1->SetParLimits(5,2.5,20);	// Std dev range
+
+	H0->Fit("ffit1","SQR");
+
+	// Store fit parameters
+	double par1[6];
+	ffit1->GetParameters(par1);
+
+	// Plot line marking peak position
+	TLine *line1 = new TLine(peak1,0,peak1,600);
+	line1->Draw("SAME");
+
+	TF1 *fback = new TF1("fback",background_func,low,high,3);
+	fback->SetParNames("a0","a1","a2");
+	fback->SetNpx(500);
+	fback->SetParameters(par1[0],par1[1],par1[2]);
+	// fback->SetParErrors(ffit1->GetParErrors());	// Set parameter errors on BG terms from previous fit
+	fback->SetLineColor(kCyan);
+	fback->Draw("SAME");
+
+	double chi2NDF = ffit1->GetChisquare()/ffit1->GetNDF();
+
+	// results format: [area, area err, chi2NDF, sigma1, linear, offset]
+	vector < double > results;
+	results.push_back(ffit1->GetParameter(3));
+	results.push_back(ffit1->GetParError(3));
+	results.push_back(chi2NDF);
+	results.push_back(ffit1->GetParameter(5));
+	results.push_back(ffit1->GetParameter(1));
+	results.push_back(ffit1->GetParameter(0));
 
 	return results;
 

@@ -136,6 +136,8 @@ effErr_1332 = areaErr_1332/totalDecayEvents_60Co
 eff_661 = area_661/totalDecayEvents_137Cs
 effErr_661 = areaErr_661/totalDecayEvents_137Cs
 
+avgEff = (eff_661+eff_1332+eff_1173)/3
+avgEffErr = (effErr_661+effErr_1332+effErr_1173)/3
 
 
 # Angle (deg) for each detector, negative is beam left, positive is beam right
@@ -198,6 +200,7 @@ labels = ["$10^{-4}$","$10^{-3}$","$10^{-2}$"]
 labelsx = ["$10^{2}$","$10^{3}$","$10^{4}$"]
 fit_x = np.array([e_gam[0],e_gam[1],e_gam[2]])
 
+# print(e_gam,split_eff[0])
 """
 for xx in range(13):
 
@@ -314,51 +317,34 @@ df = pd.DataFrame(data=d)
 
 
 # Save new DataFrame to a csv file
-df.to_csv('csv/detectorEfficiencies.csv',sep=',',index=False)
+df.to_csv('csv/detectorCalibration.csv',sep=',',index=False)
 
 
+########################################################################
 
-###############################################################################
-# Estimate the p1, p2 and a1 channel location per detector via linear interpolation
-###############################################################################
-
-# Get the centroid location info
-cent_1173 = np.array(df_60Co_1173['Centroid'])
-cent_1332 = np.array(df_60Co_1332['Centroid'])
-cent_661 = np.array(df_137Cs_661['Centroid'])
-
-centroids = np.vstack((cent_661,cent_1173,cent_1332))
-split_cent = np.hsplit(centroids,13)
-
-e_p1 = 843.76   # keV
-e_p2 = 1014.52
-e_a1 = 1368.626
-
-p1 = []
-p2 = []
-a1 = []
-
-# linear interpolation to relate energy to channel
-for yy in range(13):
-    det_interp = interp1d(e_gam,split_cent[yy].T,fill_value="extrapolate")
-    p1.append(det_interp(e_p1)[0])
-    p2.append(det_interp(e_p2)[0])
-    a1.append(det_interp(e_a1)[0])
-
-
-d = {'Det':detName,'Angle':angle,'p1':p1,'p2':p2,'a1':a1}
-df = pd.DataFrame(data=d)
-
-
-
-###############################################################################
-eff_peak = []
+# eff_peak = []
 fit_x = np.array([e_p1,e_p2,e_a1])
+p1eff = []
+p2eff = []
+a1eff = []
 for zz in range(13):
     z = interp1d(e_gam,split_eff[zz].flatten(),fill_value="extrapolate")
     fit_y = z(fit_x)
-    eff_peak.append(fit_y)
+    p1eff.append(fit_y[0])
+    p2eff.append(fit_y[1])
+    a1eff.append(fit_y[2])
 
-eff_p1 = np.hsplit(eff_peak,13)
-dd = {'Det':detName,'Angle':angle,'p1':p1,'p2':p2,'a1':a1}
+
+
+# for x in range(13):
+#     p1eff.append(eff_peak[x][0])
+#     p2eff.append(eff_peak[x][1])
+#     a1eff.append(eff_peak[x][2])
+
+detName = list(detName)*229
+angle = list(angle)*229
+dd = {'Det':detName,'Angle':angle,'p1':p1eff*229,'p2':p2eff*229,'a1':a1eff*229}
 dff = pd.DataFrame(data=dd)
+
+# Save new DataFrame to a csv file
+dff.to_csv('csv/detectorEfficiencies.csv',sep=',',index=False)

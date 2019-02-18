@@ -28,7 +28,7 @@ using std::vector;
 // CSV I/O routine
 #include "calibration/csvIO.h"
 
-//vector global for a background histogram
+// global histogram for background
 TH1D *HBACK;
 
 // global array for new peak ranges
@@ -36,6 +36,14 @@ double _peak1SpecLow[13];
 double _peak1SpecHigh[13];
 double _peak2SpecLow[13];
 double _peak2SpecHigh[13];
+
+// global array for gain match constants
+double _a_gain[13];
+double _b_gain[13];
+
+// global array for calibration constants
+double _a_calibrator[13];
+double _b_calibrator[13];
 
 
 int peakFitter(const char *fileName,const char *fileBack,const char *detector,double low,double high,int detectorLoop){
@@ -76,8 +84,32 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 
 	c0->cd(1);
 
+	HBACK->Scale(scale0);	// Scale the background
+	HBACK->SetDirectory(0);
+
 	// Prepare bg subtracted histogram
 	TH1D *ysubtracted = static_cast<TH1D*>(hyield->Clone("ysubtracted"));
+
+	TH1D *h2 = new TH1D("h2","h2",8192,0,8192);
+	TH1D *h3 = new TH1D("h3","h3",8192,0,8192);
+
+	double area;
+	double area_err;
+	double chi2NDF;
+	double sig1;
+	double sig2;
+
+	double a = 0;
+	double b = 0;
+	double a_gm = 0;
+	double b_gm = 0;
+	double a_cal = 0;
+	double b_cal = 0;
+
+	double linear = 0;
+	double offset = 0;
+
+	vector < double > a1Peak;
 
 
 	// Only gain match longer runs where background peaks appear
@@ -86,9 +118,6 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		/////////////////////////
 		///    GAIN MATCH     ///
 		/////////////////////////
-
-		HBACK->Scale(scale0);	// Scale the background
-		HBACK->SetDirectory(0);
 
 		ifstream backfileREAD;
 		backfileREAD.open("Yields/A1/_backgroundPeakRanges.csv",std::ios::in);
@@ -131,22 +160,25 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 
 
 		// New gain matched BG histogram
-		TH1D *h2 = new TH1D("h2","h2",8192,0,8192);
-		double a;
-		a = gain_match(peak1Position[0],peak2Position[0],peak1Back[0],peak2Back[0],h2,HBACK);
-		// cout << a*843.76 << endl;
+		vector < double > gain;
+		gain = gain_match(peak1Position[0],peak2Position[0],peak1Back[0],peak2Back[0],h2,HBACK);
+		a = gain[0];
+		b = gain[1];
+		a_gm = gain[0];
+		b_gm = gain[1];
 
+		_a_gain[detectorLoop] = a_gm;
+		_b_gain[detectorLoop] = b_gm;
 
 		// Draw results
 		hyield->Draw();
-		hyield->GetXaxis()->SetRangeUser(1000,1700);
+		hyield->GetXaxis()->SetRangeUser(1000,1500);
 		HBACK->Draw("SAME");			// Not gain matched BG
 		HBACK->SetLineColor(kOrange);
 		h2->Draw("SAME");				// Gain matched BG
 		h2->SetLineColor(kRed);
 		gPad->SetLogy();
-
-
+		h2->SetStats(kFALSE);
 
 		c0->cd(2);
 
@@ -155,7 +187,7 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 			double yval = ysubtracted->GetBinContent(i);
 			double yval2 = h2->GetBinContent(i);	//fback->Eval(ysubtracted->GetBinCenter(i));
 			double yerr = ysubtracted->GetBinError(i);
-			double yerr2 = h2->GetBinError(i);	// Takes the error from the gain matchedbg spectrum
+			double yerr2 = h2->GetBinError(i);	// Takes the error from the gain matched bg spectrum
 
 			ysubtracted->SetBinContent(i,yval-yval2);
 			ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
@@ -169,55 +201,97 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		}
 		ysubtracted->SetBins(nbins, new_bins);
 
-		ysubtracted->Draw();
-		ysubtracted->GetXaxis()->SetRangeUser(1000,1700);
-		gPad->SetLogy();
+
+		vector < double > calibrators;
+		calibrators = calibrate(1468,109.9,peak1Position[0],peak2Position[0],h3,ysubtracted); // 1460.82,114.3
+		a_cal = calibrators[0];
+		b_cal = calibrators[1];
+
+		// cout << a_cal << "\t" << b_cal << endl;
+
+		_a_calibrator[detectorLoop] = a_cal;
+		_b_calibrator[detectorLoop] = b_cal;
+
+		h3->Draw();
+		h3->GetXaxis()->SetRangeUser(1000,1500);
+		// gPad->SetLogy();
+		h3->SetStats(kFALSE);
 	}
 	else{
-		cout << Form("Runtime too short: %f seconds. Not performing gain match",runTime0);
+		// cout << Form("Runtime too short: %f seconds. Not performing gain match",runTime0);
+		a_cal = _a_calibrator[detectorLoop];
+		b_cal = _b_calibrator[detectorLoop];
+		a_gm = _a_gain[detectorLoop];
+		b_gm = _b_gain[detectorLoop];
+
+		h2 = gain_match2(a_gm,b_gm,h2,HBACK);
 
 		// Draw results
-		ysubtracted->Draw();
-		ysubtracted->GetXaxis()->SetRangeUser(1000,1700);
+		hyield->Draw();
+		hyield->GetXaxis()->SetRangeUser(1000,1500);
+		HBACK->Draw("SAME");			// Not gain matched BG
+		HBACK->SetLineColor(kOrange);
+		h2->Draw("SAME");				// Gain matched BG
+		h2->SetLineColor(kRed);
 		gPad->SetLogy();
-	}
+		h2->SetStats(kFALSE);
 
+		c0->cd(2);
+
+		// Recalculate errors manually
+		for(int i = 0; i<=ysubtracted->GetNbinsX(); i++){
+			double yval = ysubtracted->GetBinContent(i);
+			double yval2 = h2->GetBinContent(i);	//fback->Eval(ysubtracted->GetBinCenter(i));
+			double yerr = ysubtracted->GetBinError(i);
+			double yerr2 = h2->GetBinError(i);	// Takes the error from the gain matched bg spectrum
+
+			ysubtracted->SetBinContent(i,yval-yval2);
+			ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
+		}
+
+		// Rebinning, currently does nothing (keeps bins same)
+		const int nbins = ysubtracted->GetXaxis()->GetNbins();
+		double new_bins[nbins+1];
+		for(int i=0; i <= nbins; i++){
+			new_bins[i] = ysubtracted->GetBinLowEdge(i+1);
+		}
+		ysubtracted->SetBins(nbins, new_bins);
+
+		h3 = calibrate2(a_cal,b_cal,h3,ysubtracted);
+		h3->Draw();
+		h3->GetXaxis()->SetRangeUser(1000,1500);
+		// gPad->SetLogy();
+		h3->SetStats(kFALSE);
+	}
 
 	c0->cd(3);
 
-	// At this point, yusbtracted histogram has or has not been BG subtracted \
-		now we fit the peak of interest:									  \
-			P2 : single gaussian
-	// ysubtracted->GetXaxis()->SetRangeUser(0,2000);
-	ysubtracted->Draw();
+	h3->GetXaxis()->SetRangeUser(1000,1500);
+	h3->Draw();
 	gPad->SetLogy();
+	h3->SetStats(kFALSE);
 
-	vector < double > a1Peak;
-	a1Peak = iterative_single_gauss_area(low,high,ysubtracted);
+	a1Peak = single_gauss_area(1368.63,h3);
 
-	ysubtracted->GetXaxis()->SetRangeUser(1000,1700);
+	area = a1Peak[0];
+	area_err = a1Peak[1];
+	chi2NDF = a1Peak[2];
+	sig1 = a1Peak[3];
+	linear = a1Peak[4];
+	offset = a1Peak[5];
 
-	double area = a1Peak[0];
-	double area_err = a1Peak[1];
-	double chi2NDF = a1Peak[2];
-
-	// double area = 1;
-	// double area_err = 1;
-	// double chi2NDF = 1;
-
-
-
-	double yield = area/charge;
-	double yield_err = area_err/charge;
+	// The charge is integrated charge of alpha which is 2+
+	double yield = area/(charge);
+	double yield_err = area_err/(charge);
 
 
 	double goodFit;
-	if (chi2NDF <= 1.40 && chi2NDF >=.6 ) goodFit = 0;
+	if (chi2NDF <= 1.4 && chi2NDF >=.6 ) goodFit = 0;
 	else goodFit = 1;
 
 	string runNum = fileName;
-	runNum = runNum.substr(4,3);
-	// runNum = runNum.substr(73,3);
+	// runNum = runNum.substr(4,3);
+	runNum = runNum.substr(73,3);
 
 	string detNum = detector;
 
@@ -226,8 +300,10 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 
 	ofstream myfile;
 	myfile.open ("Yields/A1/_A1.csv",std::ios::app);
-	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<
-				","<<yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<goodFit<<"\n";
+	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
+				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
+				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
+				offset<<"\n";
 	myfile.close();
 
 
@@ -259,23 +335,25 @@ void a1Yields(){
 	chdir(path);
 
 	// Create file directory for output incase its not made
-	try {
-		cout << "\nATTEMPTING TO CREATE OUTPUT FILE DIRECTORIES" << endl;
-		// gSystem->Exec(Form("mkdir Yields"));
-		gSystem->Exec(Form("mkdir Yields/A1"));
-		gSystem->Exec(Form("mkdir Yields/A1/_ranges"));
-	}catch(...){}
+	// try {
+	// 	cout << "\nATTEMPTING TO CREATE OUTPUT FILE DIRECTORIES" << endl;
+	// 	gSystem->Exec(Form("mkdir Yields"));
+	// 	gSystem->Exec(Form("mkdir Yields/A1"));
+	// 	gSystem->Exec(Form("mkdir Yields/A1/_ranges"));
+	// }catch(...){}
 
 	// Background Spectrum file
 	const char *fileBackground = "calibration/background/run0422.root";
+
 	const char *detect;
 	const char *files;
-
 
 	// Prepare structure of data output in CSV file
 	ofstream myfile;
 	myfile.open ("Yields/A1/_A1.csv",std::ios::out);
-	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","<<"Area err"<<","<<"Fit Status"<<"\n";
+	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
+			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
+			<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<"\n";
 	myfile.close();
 
 
@@ -295,11 +373,12 @@ void a1Yields(){
 	rangefileOUT.open ("Yields/A1/_ranges/peakRanges.csv",std::ios::out);
 	double peak1SpecLow[] = {1285,1400,1400,1390,1360,1430,1410,1420,1410,1430,1420,1410,1410};
 	double peak1SpecHigh[] = {1360,1480,1485,1480,1440,1510,1480,1500,1480,1510,1510,1490,1490};
-	double peak2SpecLow[] = {1740,1885,1923,1890,1841,1934,1895,1913,1890,1924,1936,1895,1898};
-	double peak2SpecHigh[] = {1840,2034,2048,2036,2007,2090,2037,2065,2018,2059,2085,2097,2035};
+	// double peak2SpecLow[] = {1740,1885,1923,1890,1841,1934,1895,1913,1890,1924,1936,1895,1898};
+	// double peak2SpecHigh[] = {1840,2034,2048,2036,2007,2090,2037,2065,2018,2059,2085,2097,2035};
+	double peak2SpecLow[] = {113,123,129,125,124,129,126,127,126,128,127,126,123};
+	double peak2SpecHigh[] = {140,143,144,144,141,147,146,146,143,143,147,143,147};
 	writeOut(rangefileOUT,peak1SpecLow,peak1SpecHigh,peak2SpecLow,peak2SpecHigh);
 	rangefileOUT.close();
-
 
 	// Loop through runs: 159-410
 	cout << "\nBEGINNING PEAK FITTING:" << endl;
@@ -328,16 +407,16 @@ void a1Yields(){
 		int test;
 
 		// Create file directory for output
-		try {
-			gSystem->Exec(Form("mkdir Yields/A1/run0%d",i));
-		}catch(...){}
+		// try {
+		// 	gSystem->Exec(Form("mkdir Yields/A1/run0%d",i));
+		// }catch(...){}
 
 
 		// Loop through detectors on board 1 (0-7) and board 2 (8-12)
 		for(int j=0;j<13;j++){
 
-			files = Form("run0%d.root",i);
-			// files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
+			// files = Form("run0%d.root",i);
+			files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			if (j<8){
 				detect = Form("h0-%d",j);
 			}
@@ -345,13 +424,12 @@ void a1Yields(){
 				detect = Form("h1-%d",j-8);
 			}
 
-			// Estimated peak positions from calibration 778.4,836.3
+			// Estimated peak positions from calibration
+			// double peakPos[] = {1247,1352,1366,1347,1315,1379,1358,1371,1351,1372,1379,1355,1356};
 			double peakPos[] = {1247,1352,1366,1347,1315,1379,1358,1371,1351,1372,1379,1355,1356};
 			a1 = peakPos[j];
 
-
 			// Perform peak fitting
-
 			test = peakFitter(files,fileBackground,detect,a1-50,a1+50,j);
 		}
 
@@ -362,7 +440,6 @@ void a1Yields(){
 			writeOut(rangefile,_peak1SpecLow,_peak1SpecHigh,_peak2SpecLow,_peak2SpecHigh);
 			rangefile.close();
 		}
-
 
 		cout << Form("Fitting %d complete",fileNum) << endl;
 		fileNum+=1;

@@ -89,6 +89,7 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 
 	// Prepare bg subtracted histogram
 	TH1D *ysubtracted = static_cast<TH1D*>(hyield->Clone("ysubtracted"));
+
 	TH1D *h2 = new TH1D("h2","h2",8192,0,8192);
 	TH1D *h3 = new TH1D("h3","h3",8192,0,8192);
 
@@ -105,7 +106,11 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 	double a_cal = 0;
 	double b_cal = 0;
 
+	double linear = 0;
+	double offset = 0;
+
 	vector < double > p1Peak;
+
 
 	// Only gain match longer runs where background peaks appear
 	if(runTime0 > 500){
@@ -167,15 +172,13 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 
 		// Draw results
 		hyield->Draw();
-		hyield->GetXaxis()->SetRangeUser(600,1200);
+		hyield->GetXaxis()->SetRangeUser(0,400); // 600,1200
 		HBACK->Draw("SAME");			// Not gain matched BG
 		HBACK->SetLineColor(kOrange);
 		h2->Draw("SAME");				// Gain matched BG
 		h2->SetLineColor(kRed);
 		gPad->SetLogy();
 		h2->SetStats(kFALSE);
-
-
 
 		c0->cd(2);
 
@@ -203,6 +206,8 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		calibrators = calibrate(1468,109.9,peak1Position[0],peak2Position[0],h3,ysubtracted); // 1460.82,114.3
 		a_cal = calibrators[0];
 		b_cal = calibrators[1];
+
+		// cout << a_cal << "\t" << b_cal << endl;
 
 		_a_calibrator[detectorLoop] = a_cal;
 		_b_calibrator[detectorLoop] = b_cal;
@@ -273,6 +278,8 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 	chi2NDF = p1Peak[2];
 	sig1 = p1Peak[3];
 	sig2 = p1Peak[4];
+	linear = p1Peak[5];
+	offset = p1Peak[4];
 
 	// The charge is integrated charge of alpha which is 2+
 	double yield = area/(charge);
@@ -296,7 +303,8 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 	myfile.open ("Yields/P1/_P1.csv",std::ios::app);
 	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
 				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
-				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<sig2<<","<<chi2NDF<<"\n";
+				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<sig2<<","<<chi2NDF<<","<<
+				linear<<","<<offset<<"\n";
 	myfile.close();
 
 
@@ -341,13 +349,12 @@ void p1Yields(){
 	const char *detect;
 	const char *files;
 
-
 	// Prepare structure of data output in CSV file
 	ofstream myfile;
 	myfile.open ("Yields/P1/_P1.csv",std::ios::out);
 	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
 			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
-			<<"sig1"<<","<<"sig2"<<","<<"X2NDF"<<"\n";
+			<<"sig1"<<","<<"sig2"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<"\n";
 	myfile.close();
 
 
@@ -418,7 +425,7 @@ void p1Yields(){
 				detect = Form("h1-%d",j-8);
 			}
 
-			// Estimated peak positions from calibration 778.4,836.3
+			// Estimated peak positions from calibration
 			// double peakPos[] = {774,836,846,833,811,851,840,843,832,840,847,828,832};
 			double peakPos[] = {778.4,836.3,850.7,838.1,815.1,859.8,844.8,851.2,839.2,849.2,850.3,837.7,839.2};
 			p1 = peakPos[j];
