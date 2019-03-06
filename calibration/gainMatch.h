@@ -35,7 +35,7 @@ vector < double > gain_match(Double_t E1, Double_t E2, Double_t E1p, Double_t E2
 		bin_value = H2p->GetBinContent(ch);
 
 		for(int N=0; N<bin_value; N++){
-			H2->Fill(a*(ch+(rand->Rndm()-0.5)) + b); // fill new histogram with gain matched energies
+			H2->Fill(a*(ch+(rand->Rndm())) + b); // fill new histogram with gain matched energies
 		}
 	}
 
@@ -71,7 +71,7 @@ vector < double > calibrate(Double_t E1, Double_t E2, Double_t E1p, Double_t E2p
 		bin_value = H2p->GetBinContent(ch);
 
 		for(int N=0; N<bin_value; N++){
-			H2->Fill(a*(ch+(rand->Rndm()-0.5)) + b); // fill new histogram with gain matched energies
+			H2->Fill(a*(ch+(rand->Rndm())) + b); // fill new histogram with gain matched energies
 		}
 	}
 
@@ -101,7 +101,7 @@ TH1D *gain_match2(double a, double b, TH1D* H2, TH1D* H2p){
 		bin_value = H2p->GetBinContent(ch);
 
 		for(int N=0; N<bin_value; N++){
-			H2->Fill(a*(ch+(rand->Rndm()-0.5)) + b); // fill new histogram with gain matched energies
+			H2->Fill(a*(ch+(rand->Rndm())) + b); // fill new histogram with gain matched energies
 		}
 	}
 
@@ -126,7 +126,7 @@ TH1D *calibrate2(double a, double b, TH1D* H2, TH1D* H2p){
 		bin_value = H2p->GetBinContent(ch);
 
 		for(int N=0; N<bin_value; N++){
-			H2->Fill(a*(ch+(rand->Rndm()-0.5)) + b); // fill new histogram with gain matched energies
+			H2->Fill(a*(ch+(rand->Rndm())) + b); // fill new histogram with gain matched energies
 		}
 	}
 

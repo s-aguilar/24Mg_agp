@@ -148,6 +148,9 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		// Find the peak positions in runs given an estimated range
 		vector < double > peak1Position;
 		vector < double > peak2Position;
+
+		hyield->Draw();
+
 		peak1Position = iterative_double_gauss_peak(runPeaks[0][detectorLoop],runPeaks[1][detectorLoop],hyield);
 		peak2Position = iterative_single_gauss_peak(runPeaks[2][detectorLoop],runPeaks[3][detectorLoop],hyield);
 
@@ -171,14 +174,14 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		_b_gain[detectorLoop] = b_gm;
 
 		// Draw results
-		hyield->Draw();
+		// hyield->Draw();
 		hyield->GetXaxis()->SetRangeUser(600,1200);
-		HBACK->Draw("SAME");			// Not gain matched BG
-		HBACK->SetLineColor(kOrange);
-		h2->Draw("SAME");				// Gain matched BG
-		h2->SetLineColor(kRed);
+		// HBACK->Draw("SAME");			// Not gain matched BG
+		// HBACK->SetLineColor(kOrange);
+		// h2->Draw("SAME");				// Gain matched BG
+		// h2->SetLineColor(kRed);
 		gPad->SetLogy();
-		h2->SetStats(kFALSE);
+		hyield->SetStats(kFALSE);
 
 		c0->cd(2);
 
@@ -192,15 +195,6 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 			ysubtracted->SetBinContent(i,yval-yval2);
 			ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
 		}
-
-		// Rebinning, currently does nothing (keeps bins same)
-		const int nbins = ysubtracted->GetXaxis()->GetNbins();
-		double new_bins[nbins+1];
-		for(int i=0; i <= nbins; i++){
-			new_bins[i] = ysubtracted->GetBinLowEdge(i+1);
-		}
-		ysubtracted->SetBins(nbins, new_bins);
-
 
 		vector < double > calibrators;
 		calibrators = calibrate(1468,109.9,peak1Position[0],peak2Position[0],h3,ysubtracted); // 1460.82,114.3
@@ -229,12 +223,12 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		// Draw results
 		hyield->Draw();
 		hyield->GetXaxis()->SetRangeUser(600,1200);
-		HBACK->Draw("SAME");			// Not gain matched BG
-		HBACK->SetLineColor(kOrange);
-		h2->Draw("SAME");				// Gain matched BG
-		h2->SetLineColor(kRed);
+		// HBACK->Draw("SAME");			// Not gain matched BG
+		// HBACK->SetLineColor(kOrange);
+		// h2->Draw("SAME");				// Gain matched BG
+		// h2->SetLineColor(kRed);
 		gPad->SetLogy();
-		h2->SetStats(kFALSE);
+		hyield->SetStats(kFALSE);
 
 		c0->cd(2);
 
@@ -303,7 +297,7 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
 				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
 				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
-				offset<<"\n";
+				offset<<","<<charge<<"\n";
 	myfile.close();
 
 
@@ -353,7 +347,7 @@ void p2Yields(){
 	myfile.open ("Yields/P2/_P2.csv",std::ios::out);
 	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
 			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
-			<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<"\n";
+			<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
 	myfile.close();
 
 

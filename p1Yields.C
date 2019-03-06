@@ -148,6 +148,9 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		// Find the peak positions in runs given an estimated range
 		vector < double > peak1Position;
 		vector < double > peak2Position;
+
+		hyield->Draw();
+
 		peak1Position = iterative_double_gauss_peak(runPeaks[0][detectorLoop],runPeaks[1][detectorLoop],hyield);
 		peak2Position = iterative_single_gauss_peak(runPeaks[2][detectorLoop],runPeaks[3][detectorLoop],hyield);
 
@@ -157,6 +160,8 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		_peak1SpecHigh[detectorLoop] = peak1Position[2];
 		_peak2SpecLow[detectorLoop] = peak2Position[1];
 		_peak2SpecHigh[detectorLoop] = peak2Position[2];
+
+
 
 
 		// New gain matched BG histogram
@@ -171,14 +176,15 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		_b_gain[detectorLoop] = b_gm;
 
 		// Draw results
-		hyield->Draw();
-		hyield->GetXaxis()->SetRangeUser(0,400); // 600,1200
-		HBACK->Draw("SAME");			// Not gain matched BG
-		HBACK->SetLineColor(kOrange);
-		h2->Draw("SAME");				// Gain matched BG
-		h2->SetLineColor(kRed);
+		// hyield->Draw();
+		hyield->GetXaxis()->SetRangeUser(600,1200); // 600,1200
+		// HBACK->Draw("SAME");			// Not gain matched BG
+		// HBACK->SetLineColor(kOrange);
+		// h2->Draw("SAME");				// Gain matched BG
+		// h2->SetLineColor(kRed);
 		gPad->SetLogy();
-		h2->SetStats(kFALSE);
+		hyield->SetStats(kFALSE);
+
 
 		c0->cd(2);
 
@@ -213,7 +219,8 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		_b_calibrator[detectorLoop] = b_cal;
 
 		h3->Draw();
-		h3->GetXaxis()->SetRangeUser(600,1200);
+		// h3->GetXaxis()->SetRangeUser(600,1200);
+		h3->GetXaxis()->SetRangeUser(0,300);
 		// gPad->SetLogy();
 		h3->SetStats(kFALSE);
 	}
@@ -229,12 +236,12 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 		// Draw results
 		hyield->Draw();
 		hyield->GetXaxis()->SetRangeUser(600,1200);
-		HBACK->Draw("SAME");			// Not gain matched BG
-		HBACK->SetLineColor(kOrange);
-		h2->Draw("SAME");				// Gain matched BG
-		h2->SetLineColor(kRed);
+		// HBACK->Draw("SAME");			// Not gain matched BG
+		// HBACK->SetLineColor(kOrange);
+		// h2->Draw("SAME");				// Gain matched BG
+		// h2->SetLineColor(kRed);
 		gPad->SetLogy();
-		h2->SetStats(kFALSE);
+		hyield->SetStats(kFALSE);
 
 		c0->cd(2);
 
@@ -248,14 +255,6 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 			ysubtracted->SetBinContent(i,yval-yval2);
 			ysubtracted->SetBinError(i,TMath::Sqrt(yerr*yerr+yerr2*yerr2));
 		}
-
-		// Rebinning, currently does nothing (keeps bins same)
-		const int nbins = ysubtracted->GetXaxis()->GetNbins();
-		double new_bins[nbins+1];
-		for(int i=0; i <= nbins; i++){
-			new_bins[i] = ysubtracted->GetBinLowEdge(i+1);
-		}
-		ysubtracted->SetBins(nbins, new_bins);
 
 		h3 = calibrate2(a_cal,b_cal,h3,ysubtracted);
 		h3->Draw();
@@ -304,7 +303,7 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
 				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
 				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<sig2<<","<<chi2NDF<<","<<
-				linear<<","<<offset<<"\n";
+				linear<<","<<offset<<","<<charge<<"\n";
 	myfile.close();
 
 
@@ -354,17 +353,17 @@ void p1Yields(){
 	myfile.open ("Yields/P1/_P1.csv",std::ios::out);
 	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
 			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
-			<<"sig1"<<","<<"sig2"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<"\n";
+			<<"sig1"<<","<<"sig2"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","
+			<<"Q_int"<<"\n";
 	myfile.close();
-
 
 	// BG spectra peak ranges
 	ofstream backfileOUT;
 	backfileOUT.open ("Yields/P1/_backgroundPeakRanges.csv",std::ios::out);
-	double peak1BackLow[] = {1270,1380,1385,1370,1330,1390,1380,1380,1370,1390,1390,1350,1380};
-	double peak1BackHigh[] = {1380,1500,1510,1485,1450,1540,1510,1520,1490,1510,1530,1500,1490};
-	double peak2BackLow[] = {1750,1927,1935,1930,1887,1980,1942,1946,1912,1948,1980,1942,1942};
-	double peak2BackHigh[] = {1830,2015,2025,2010,1972,2064,2017,2050,1993,2029,2073,2027,2020};
+	double peak1BackLow[] = {200,210,220,210,209,226,220,220,215,215,220,210,215};
+	double peak1BackHigh[] = {235,250,264,260,250,267,260,260,250,255,260,250,250};
+	double peak2BackLow[] = {1270,1380,1385,1370,1330,1390,1380,1380,1370,1390,1390,1350,1380};
+	double peak2BackHigh[] = {1380,1500,1510,1485,1450,1540,1510,1520,1490,1510,1530,1500,1490};
 	writeOut(backfileOUT,peak1BackLow,peak1BackHigh,peak2BackLow,peak2BackHigh);
 	backfileOUT.close();
 
@@ -381,10 +380,33 @@ void p1Yields(){
 	writeOut(rangefileOUT,peak1SpecLow,peak1SpecHigh,peak2SpecLow,peak2SpecHigh);
 	rangefileOUT.close();
 
+	// // BG spectra peak ranges
+	// ofstream backfileOUT;
+	// backfileOUT.open ("Yields/P1/_backgroundPeakRanges.csv",std::ios::out);
+	// double peak1BackLow[] = {1270,1380,1385,1370,1330,1390,1380,1380,1370,1390,1390,1350,1380};
+	// double peak1BackHigh[] = {1380,1500,1510,1485,1450,1540,1510,1520,1490,1510,1530,1500,1490};
+	// double peak2BackLow[] = {1750,1927,1935,1930,1887,1980,1942,1946,1912,1948,1980,1942,1942};
+	// double peak2BackHigh[] = {1830,2015,2025,2010,1972,2064,2017,2050,1993,2029,2073,2027,2020};
+	// writeOut(backfileOUT,peak1BackLow,peak1BackHigh,peak2BackLow,peak2BackHigh);
+	// backfileOUT.close();
+	//
+	// // Spectra peak ranges from run0159 \
+	// 	These get updated as runs progress
+	// ofstream rangefileOUT;
+	// rangefileOUT.open ("Yields/P1/_ranges/peakRanges.csv",std::ios::out);
+	// double peak1SpecLow[] = {1285,1400,1400,1390,1360,1430,1410,1420,1410,1430,1420,1410,1410};
+	// double peak1SpecHigh[] = {1360,1480,1485,1480,1440,1510,1480,1500,1480,1510,1510,1490,1490};
+	// // double peak2SpecLow[] = {1740,1885,1923,1890,1841,1934,1895,1913,1890,1924,1936,1895,1898};
+	// // double peak2SpecHigh[] = {1840,2034,2048,2036,2007,2090,2037,2065,2018,2059,2085,2097,2035};
+	// double peak2SpecLow[] = {113,123,129,125,124,129,126,127,126,128,127,126,123};
+	// double peak2SpecHigh[] = {140,143,144,144,141,147,146,146,143,143,147,143,147};
+	// writeOut(rangefileOUT,peak1SpecLow,peak1SpecHigh,peak2SpecLow,peak2SpecHigh);
+	// rangefileOUT.close();
+
 	// Loop through runs: 159-410
 	cout << "\nBEGINNING PEAK FITTING:" << endl;
 	int fileNum = 1;
-	for(int i=159;i<410;i++){ // 410
+	for(int i=159;i<162;i++){ // 410
 
 		// Skip bad runs
 		if(i==163) continue;

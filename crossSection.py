@@ -86,7 +86,7 @@ for det in range(len(detectors)):
     plt.clf()
     # print (detectors[det])  #,len(p1Yield[maskDet])/len(p1Yield[(df1['Detector']==detectors[det])])*100)
     # plt.scatter(p1Ealpha[maskDet],p1Yield[maskDet],c='b',marker='.')
-    plt.errorbar(p1Ealpha[maskDet],p1Cross[maskDet],yerr=p1Cross_err[maskDet],fmt='b.',markersize='1')
+    plt.errorbar(p1Ealpha[maskDet],p1Cross[maskDet],yerr=p1Cross_err[maskDet],fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
@@ -95,7 +95,7 @@ for det in range(len(detectors)):
     plt.title('p1 %s    %d$^{\circ}$'%(detectors[det],angle[det]))
     plt.savefig('yieldPlots/P1/p1_%s.png'%detectors[det],dpi=300)
     # plt.show()
-# """
+
 # with open("rMatrix_p1.dat","w") as f:
 #     for loop in range(len(p1Cross)):
 #         printOut= '%f \t %d \t %.8f \t %.8f \n' %(p1Ealpha[loop],Angle[loop],p1Cross[loop],p1Cross_err[loop])
@@ -115,7 +115,7 @@ for ang in AnglesList:
     for x in range(229):    # total of 229 runs
         _p1Ealpha.append(p1Ealpha[int(13*x)])
         if ang == '0':
-            print(p1Cross[x*13+6])
+            # print(p1Cross[x*13+6])
             _Angle.append(Angle[x*13+6])
             _p1Cross.append(p1Cross[x*13+6])
             _p1Cross_err.append(p1Cross_err[x*13+6])
@@ -146,12 +146,12 @@ for ang in AnglesList:
 
     # Make the Cross-Section plot
     plt.clf()
-    plt.errorbar(_p1Ealpha,_p1Cross,yerr=_p1Cross_err,fmt='b.',markersize='1')
+    plt.errorbar(_p1Ealpha,_p1Cross,yerr=_p1Cross_err,fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
     plt.xlabel('$E_{\\alpha}$ (MeV)')
-    plt.ylabel('Cross-Section (barns)')
+    plt.ylabel('Differential Cross-Section (barns/sr)')
     plt.title('p1 %s$^{\circ}$'%ang)
     plt.savefig('crossSection/P1/p1_%s.png'%ang,dpi=300)
     plt.clf()
@@ -161,8 +161,8 @@ for ang in AnglesList:
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p1Ealpha[loop],_Angle[loop],_p1Cross[loop],_p1Cross_err[loop])
             f.write(printOut)
 
-print('\n',p1Cross[13*228+6])
-
+# print('\n',p1Cross[13*228+6])
+# """
 
 
 
@@ -194,15 +194,14 @@ for det in range(len(detectors)):
     maskDet = ((df2['Detector']==detectors[det])) # & mask1Fit & )
 
     plt.clf()
-    plt.errorbar(p2Ealpha[maskDet],p2Cross[maskDet],yerr=p2Cross_err[maskDet],fmt='b.',markersize='1')
+    plt.errorbar(p2Ealpha[maskDet],p2Cross[maskDet],yerr=p2Cross_err[maskDet],fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
     plt.xlabel('$E_{\\alpha}$ (MeV)')
-    plt.ylabel('Cross-Section (barns)')
+    plt.ylabel('Cross-Section (barns/sr)')
     plt.title('p2 %s    %d$^{\circ}$'%(detectors[det],angle[det]))
     plt.savefig('yieldPlots/P2/p2_%s.png'%detectors[det],dpi=300)
-# """
 
 for ang in AnglesList:
     _p2Ealpha = []
@@ -214,7 +213,7 @@ for ang in AnglesList:
     for x in range(229):    # total of 229 runs
         _p2Ealpha.append(p2Ealpha[int(13*x)])
         if ang == '0':
-            print(p2Cross[x*13+6])
+            # print(p2Cross[x*13+6])
             _Angle.append(Angle[x*13+6])
             _p2Cross.append(p2Cross[x*13+6])
             _p2Cross_err.append(p2Cross_err[x*13+6])
@@ -245,13 +244,13 @@ for ang in AnglesList:
 
     # Make the Cross-Section plot
     plt.clf()
-    # print(len(_p2Ealpha),len(_p2Cross),len(_p2Cross_err))
-    plt.errorbar(_p2Ealpha,_p2Cross,yerr=_p2Cross_err,fmt='b.',markersize='1')
+    plt.plot(_p2Ealpha,_p2Cross)
+    plt.errorbar(_p2Ealpha,_p2Cross,yerr=_p2Cross_err,fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
     plt.xlabel('$E_{\\alpha}$ (MeV)')
-    plt.ylabel('Cross-Section (barns)')
+    plt.ylabel('Differential Cross-Section (barns/sr)')
     plt.title('p2 %s$^{\circ}$'%ang)
     plt.savefig('crossSection/P2/p2_%s.png'%ang,dpi=300)
     plt.clf()
@@ -260,6 +259,9 @@ for ang in AnglesList:
         for loop in range(229):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p2Ealpha[loop],_Angle[loop],_p2Cross[loop],_p2Cross_err[loop])
             f.write(printOut)
+# """
+
+
 # """
 # Extract the columns of the DataFrame as numpy arrays
 a1Run = df3['Run'].values
@@ -288,15 +290,14 @@ for det in range(len(detectors)):
     maskDet = ((df3['Detector']==detectors[det])) # & mask1Fit & )
 
     plt.clf()
-    plt.errorbar(a1Ealpha[maskDet],a1Cross[maskDet],yerr=a1Cross_err[maskDet],fmt='b.',markersize='1')
+    plt.errorbar(a1Ealpha[maskDet],a1Cross[maskDet],yerr=a1Cross_err[maskDet],fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
     plt.xlabel('$E_{\\alpha}$ (MeV)')
-    plt.ylabel('Cross-Section (barns)')
+    plt.ylabel('Cross-Section (barns/sr)')
     plt.title('a1 %s    %d$^{\circ}$'%(detectors[det],angle[det]))
     plt.savefig('yieldPlots/A1/a1_%s.png'%detectors[det],dpi=300)
-# """
 
 for ang in AnglesList:
     _a1Ealpha = []
@@ -308,7 +309,7 @@ for ang in AnglesList:
     for x in range(229):    # total of 229 runs
         _a1Ealpha.append(a1Ealpha[int(13*x)])
         if ang == '0':
-            print(a1Cross[x*13+6])
+            # print(a1Cross[x*13+6])
             _Angle.append(Angle[x*13+6])
             _a1Cross.append(a1Cross[x*13+6])
             _a1Cross_err.append(a1Cross_err[x*13+6])
@@ -339,13 +340,13 @@ for ang in AnglesList:
 
     # Make the Cross-Section plot
     plt.clf()
-    plt.errorbar(_p1Ealpha,_a1Cross,yerr=_a1Cross_err,fmt='b.',markersize='1')
+    plt.errorbar(_p1Ealpha,_a1Cross,yerr=_a1Cross_err,fmt='b.',)
     plt.yscale('log')
     plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
     plt.xlabel('$E_{\\alpha}$ (MeV)')
-    plt.ylabel('Cross-Section (barns)')
-    plt.title('p1 %s$^{\circ}$'%ang)
+    plt.ylabel('Differential Cross-Section (barns/sr)')
+    plt.title('a1 %s$^{\circ}$'%ang)
     plt.savefig('crossSection/A1/a1_%s.png'%ang,dpi=300)
     plt.clf()
 
@@ -353,6 +354,6 @@ for ang in AnglesList:
         for loop in range(229):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_a1Ealpha[loop],_Angle[loop],_a1Cross[loop],_a1Cross_err[loop])
             f.write(printOut)
-
+# """
 
 print('DONE!')
