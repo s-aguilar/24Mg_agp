@@ -409,7 +409,7 @@ void p2Yields(){
 		// Loop through detectors on board 1 (0-7) and board 2 (8-12)
 		for(int j=0;j<13;j++){
 
-			// files = Form("run0%d.root",i);
+			// files = Form("runs/run0%d.root",i);
 			files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
 			if (j<8){
 				detect = Form("h0-%d",j);
