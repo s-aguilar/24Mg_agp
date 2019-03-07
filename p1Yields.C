@@ -79,7 +79,7 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 
 	// Create the canvas
 	TCanvas *c0 = new TCanvas("c0","c0",600,800);
-	c0->Divide(1,3); // 2
+	c0->Divide(1,4);
 	c0->Update();
 
 	c0->cd(1);
@@ -290,7 +290,7 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 	else goodFit = 1;
 
 	string runNum = fileName;
-	runNum = runNum.substr(4,3);
+	runNum = runNum.substr(9,3);
 	// runNum = runNum.substr(73,3);
 
 	string detNum = detector;

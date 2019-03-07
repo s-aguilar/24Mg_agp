@@ -284,7 +284,7 @@ int peakFitter(const char *fileName,const char *fileBack,const char *detector,do
 	else goodFit = 1;
 
 	string runNum = fileName;
-	// runNum = runNum.substr(4,3);
+	// runNum = runNum.substr(9,3);
 	runNum = runNum.substr(73,3);
 
 	string detNum = detector;
