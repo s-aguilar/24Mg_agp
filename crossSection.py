@@ -22,11 +22,11 @@ detectors = ['det_h0-0','det_h0-1','det_h0-2','det_h0-3','det_h0-4','det_h0-5',
 # Read in the data into dataframe
 dfeff = pd.read_csv('calibration/csv/detectorEfficiencies.csv')
 df1 = pd.read_csv('Yields/P1/p1Yields.csv')
-df1 = df1.sort_values(by=['Ea'])
+# df1 = df1.sort_values(by=['Ea'])
 df2 = pd.read_csv('Yields/P2/p2Yields.csv')
-df2 = df2.sort_values(by=['Ea'])
+# df2 = df2.sort_values(by=['Ea'])
 df3 = pd.read_csv('Yields/A1/a1Yields.csv')
-df3 = df3.sort_values(by=['Ea'])
+# df3 = df3.sort_values(by=['Ea'])
 
 
 effp1 = dfeff['p1'].values
@@ -47,9 +47,6 @@ scale = 1e-8    # 10^-8 C/pulse
 q_corr = scale/(2*q_e)
 barn_conv = 1/(1e-24)
 solidAngle = 4*np.pi
-
-print(numOfTarget)
-print(q_corr)
 
 # """
 # Extract the columns of the DataFrame as numpy arrays
@@ -77,15 +74,13 @@ p1Ealpha = df1['Ea'].values/1000    # Convert keV to MeV
 # Mask for which the fit was bad
 
 # """
-mask1Fit = (df1['Fit Status'] == 0)
+mask1Fit = (df1['Fit Status'] == 0) # Not currently in use
 
 for det in range(len(detectors)):
 
     maskDet = ((df1['Detector']==detectors[det])) # & mask1Fit & )
 
     plt.clf()
-    # print (detectors[det])  #,len(p1Yield[maskDet])/len(p1Yield[(df1['Detector']==detectors[det])])*100)
-    # plt.scatter(p1Ealpha[maskDet],p1Yield[maskDet],c='b',marker='.')
     plt.errorbar(p1Ealpha[maskDet],p1Cross[maskDet],yerr=p1Cross_err[maskDet],fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
@@ -94,7 +89,6 @@ for det in range(len(detectors)):
     plt.ylabel('Cross-Section (barns)')
     plt.title('p1 %s    %d$^{\circ}$'%(detectors[det],angle[det]))
     plt.savefig('yieldPlots/P1/p1_%s.png'%detectors[det],dpi=300)
-    # plt.show()
 
 # with open("rMatrix_p1.dat","w") as f:
 #     for loop in range(len(p1Cross)):
@@ -103,7 +97,7 @@ for det in range(len(detectors)):
 
 AnglesList=['0','15','30','45','90','105','120']
 
-
+# test2 = []
 
 for ang in AnglesList:
     _p1Ealpha = []
@@ -118,6 +112,7 @@ for ang in AnglesList:
             # print(p1Cross[x*13+6])
             _Angle.append(Angle[x*13+6])
             _p1Cross.append(p1Cross[x*13+6])
+            # test2.append(p1Cross[x*13+6])
             _p1Cross_err.append(p1Cross_err[x*13+6])
         elif ang == '15':
             _Angle.append( (abs(Angle[x*13+5])+abs(Angle[x*13+7]))/2 )
@@ -146,6 +141,7 @@ for ang in AnglesList:
 
     # Make the Cross-Section plot
     plt.clf()
+    # plt.plot(_p1Ealpha,_p1Cross)
     plt.errorbar(_p1Ealpha,_p1Cross,yerr=_p1Cross_err,fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
@@ -161,10 +157,12 @@ for ang in AnglesList:
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p1Ealpha[loop],_Angle[loop],_p1Cross[loop],_p1Cross_err[loop])
             f.write(printOut)
 
-# print('\n',p1Cross[13*228+6])
-# """
-
-
+# test1 = set(p1Cross[(df1['Detector']=='det_h0-6')][:16])
+# print(test1)
+# print('\n',test2[:16])
+# test2 = set(test2[:16])
+# if (test1==test2): print("its the same!")
+# else: print("fuck its different!")
 
 # """
 # Extract the columns of the DataFrame as numpy arrays
@@ -244,7 +242,7 @@ for ang in AnglesList:
 
     # Make the Cross-Section plot
     plt.clf()
-    plt.plot(_p2Ealpha,_p2Cross)
+    # plt.plot(_p2Ealpha,_p2Cross)
     plt.errorbar(_p2Ealpha,_p2Cross,yerr=_p2Cross_err,fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
@@ -340,7 +338,8 @@ for ang in AnglesList:
 
     # Make the Cross-Section plot
     plt.clf()
-    plt.errorbar(_p1Ealpha,_a1Cross,yerr=_a1Cross_err,fmt='b.',)
+    # plt.plot(_a1Ealpha,_a1Cross)
+    plt.errorbar(_a1Ealpha,_a1Cross,yerr=_a1Cross_err,fmt='b.',markersize='6')
     plt.yscale('log')
     plt.ylim(1e-6,1)
     plt.xlim(4,5.6)

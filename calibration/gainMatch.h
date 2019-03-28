@@ -17,8 +17,8 @@ vector < double > gain_match(Double_t E1, Double_t E2, Double_t E1p, Double_t E2
 
 	// "linear" map
 	// E(Ep) = a*Ep + b
-	E2 = 0;
-	E2p = 0;
+	// E2 = 0;
+	// E2p = 0;
 	double a = (E2 - E1)/(E2p - E1p);
 	double b = E2 - a*E2p;
 
@@ -45,6 +45,28 @@ vector < double > gain_match(Double_t E1, Double_t E2, Double_t E1p, Double_t E2
 	results.push_back(b);
 
 	return results;
+}
+
+
+TH1D *gain_match2(double a, double b, TH1D* H2, TH1D* H2p){
+	// H2p is the original spectrum, H2 will be the new calibrated spectrum
+
+	TRandom3 *rand = new TRandom3(0); // Random number [0,1)
+
+	Int_t ch_max = H2p->GetNbinsX();
+	// cout << "Number of bins: " << ch_max << endl;
+ 	// check for correct number of bins
+
+	for(int ch=0; ch<ch_max; ch++){
+		int bin_value;
+		bin_value = H2p->GetBinContent(ch);
+
+		for(int N=0; N<bin_value; N++){
+			H2->Fill(a*(ch+(rand->Rndm())) + b); // fill new histogram with gain matched energies
+		}
+	}
+
+	return H2;
 }
 
 
@@ -81,31 +103,6 @@ vector < double > calibrate(Double_t E1, Double_t E2, Double_t E1p, Double_t E2p
 	results.push_back(b);
 
 	return results;
-}
-
-
-TH1D *gain_match2(double a, double b, TH1D* H2, TH1D* H2p){
-	// H2p is the original spectrum, H2 will be the new calibrated spectrum
-
-	TRandom3 *rand = new TRandom3(0); // Random number [0,1)
-
-	// "linear" map
-	// E(Ep) = a*Ep + b
-
-	Int_t ch_max = H2p->GetNbinsX();
-	// cout << "Number of bins: " << ch_max << endl;
- 	// check for correct number of bins
-
-	for(int ch=0; ch<ch_max; ch++){
-		int bin_value;
-		bin_value = H2p->GetBinContent(ch);
-
-		for(int N=0; N<bin_value; N++){
-			H2->Fill(a*(ch+(rand->Rndm())) + b); // fill new histogram with gain matched energies
-		}
-	}
-
-	return H2;
 }
 
 
