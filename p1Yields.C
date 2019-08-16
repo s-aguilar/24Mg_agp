@@ -226,7 +226,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	h3->Draw();
 	h3->SetStats(kFALSE);
 
-	p1Peak = double_gauss_area_p1(843.8,867.7,h3); // 843.76
+	p1Peak = double_gauss_area_p1(843.8,867.7,h3,detLoop); // 843.76
 
 	area = p1Peak[0];
 	area_err = p1Peak[1];
@@ -240,8 +240,8 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	double yield_err = area_err/(charge);
 
 	double goodFit;
-	if (chi2NDF <= 1.4 && chi2NDF >=.6 ) goodFit = 0;
-	else goodFit = 1;
+	if (chi2NDF <= 1.4 && chi2NDF >=.6 ) goodFit = 1;
+	else goodFit = 0;
 
 	string runNum = fileName;
 	if (loc==1) runNum = runNum.substr(9,3);
@@ -253,19 +253,23 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	c0->SaveAs(Form("Yields/P1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
 
 
-	ofstream myfile;
-	myfile.open ("Yields/P1/_P1.csv",std::ios::app);
-	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
-				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
-				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
-				offset<<","<<charge<<"\n";
-	myfile.close();
+	// ofstream myfile;
+	// myfile.open ("Yields/P1/_P1.csv",std::ios::app);
+	// myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
+	// 			yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
+	// 			goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
+	// 			offset<<","<<charge<<"\n";
+	// myfile.close();
 
 
 	c0->Clear();
+	delete ysubtracted;
+	delete h2;
+	delete h3;
 	fyield->Close();
 	fbackground->Close();
 	delete c0;
+
 
 	gROOT->Reset();
 }
@@ -288,13 +292,13 @@ void p1Yields(){
 	const char *detect;
 	const char *files;
 
-	// Prepare structure of data output in CSV file
-	ofstream myfile;
-	myfile.open ("Yields/P1/_P1.csv",std::ios::out);
-	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
-			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
-			<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
-	myfile.close();
+	// // Prepare structure of data output in CSV file
+	// ofstream myfile;
+	// myfile.open ("Yields/P1/_P1.csv",std::ios::out);
+	// myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
+	// 		<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
+	// 		<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
+	// myfile.close();
 
 	// BG spectra peak ranges
 	const vector < double >  peak1BackLow ({310,330,330,330,320,340,330,330,330,330,320,310,330});

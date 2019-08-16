@@ -76,7 +76,7 @@ totalDecayEvents_137Cs = np.array(runtime_137Cs*currentActivity_137Cs)
 
 
 
-"""
+# """
 # Plot change in peak areas using different peak area methods
 print('\nPlotting change in efficiency using different peak area methods')
 start_time = time.time()
@@ -144,7 +144,7 @@ avgEffErr = (effErr_661+effErr_1332+effErr_1173)/3
 #         00  01 02 03 04 05 06 07  10  11  12   13   14
 angle = np.array([120,105,90,45,30,15,0,-15,-30,-45,-90,-105,-120])
 
-"""
+# """
 # Plot efficiencies as function of angle for each calibration run
 print('\nPlotting efficiencies as function of angle for each calibration run')
 start_time = time.time()
@@ -201,7 +201,7 @@ labelsx = ["$10^{2}$","$10^{3}$","$10^{4}$"]
 fit_x = np.array([e_gam[0],e_gam[1],e_gam[2]])
 
 # print(e_gam,split_eff[0])
-"""
+# """
 for xx in range(13):
 
     # Normal plot
@@ -242,7 +242,7 @@ print('DONE!\t Process required: %f seconds'%(end_time - start_time))
 # """
 
 
-"""
+# """
 # Plot corresponding detector efficiencies
 print('\nPlotting matching detector efficiencies')
 start_time = time.time()

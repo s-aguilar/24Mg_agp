@@ -293,7 +293,7 @@ vector < double > iterative_single_gauss_peak(double low, double high, TH1D *H0)
 	ffit2->SetParLimits(5,5,15);	// Std dev range
 
 	ffit2->SetLineColor(kBlack);
-	H0->Fit("ffit2","SQR");
+	H0->Fit("ffit2","SQRN0");
 
 	double peakPos = ffit2->GetParameter(4);
 	double sigma = ffit2->GetParameter(5);
@@ -383,7 +383,7 @@ vector < double > iterative_double_gauss_peak(double low, double high, TH1D *H0)
 	ffit2->SetParLimits(8,8,18);	// Std dev range
 
 	ffit2->SetLineColor(kBlack);
-	H0->Fit("ffit2","SQR");
+	H0->Fit("ffit2","SQRN0");
 
 	// Store fit parameters
 	double par2[9];
@@ -968,7 +968,8 @@ vector < double > single_gauss_area(double peak1, TH1D *H0){
 
 	ffit1->SetParLimits(5,7,14);	// Std dev range
 
-	H0->Fit("ffit1","SQRE");
+	// H0->Fit("ffit1","SQRE");
+	TFitResultPtr r = H0->Fit("ffit1","SQRE");
 
 	// Store fit parameters
 	double par1[6];
@@ -991,7 +992,9 @@ vector < double > single_gauss_area(double peak1, TH1D *H0){
 	// results format: [area, area err, chi2NDF, sigma1, linear, offset]
 	vector < double > results;
 	results.push_back(ffit1->GetParameter(3));
-	results.push_back(ffit1->GetParError(3));
+	if (r->IsValid()) results.push_back(ffit1->GetParError(3));
+	else results.push_back(TMath::Sqrt(ffit1->GetParameter(3)));
+	// results.push_back(ffit1->GetParError(3));
 	results.push_back(chi2NDF);
 	results.push_back(ffit1->GetParameter(5));
 	results.push_back(ffit1->GetParameter(1));
@@ -1075,7 +1078,8 @@ vector < double > double_gauss_area(double peak1, double peak2, TH1D *H0){
 	// results format: [area, area err, chi2NDF, sigma1, sigma2, linear, offset]
 	vector < double > results;
 	results.push_back(ffit1->GetParameter(3));
-	results.push_back(ffit1->GetParError(3));
+	if (ffit1->GetParameter(3) < ffit1->GetParError(3)) results.push_back(TMath::Sqrt(ffit1->GetParameter(3)));
+	else results.push_back(ffit1->GetParError(3));
 	results.push_back(chi2NDF);
 	results.push_back(par1[5]);
 	results.push_back(par1[5]); //8
@@ -1087,7 +1091,7 @@ vector < double > double_gauss_area(double peak1, double peak2, TH1D *H0){
 }
 
 
-vector < double > double_gauss_area_p1(double peak1, double peak2, TH1D *H0){
+vector < double > double_gauss_area_p1(double peak1, double peak2, TH1D *H0, int detLoop){
 	/* FOR FINDING PEAK POSITIONS:
 		Fit using fit_double_gauss_func, hone in on parameters and then
 		fit it again. Return peak 1 area
@@ -1099,7 +1103,7 @@ vector < double > double_gauss_area_p1(double peak1, double peak2, TH1D *H0){
 	TF1 *ffit1 = new TF1("ffit1",fit_double_gauss_same_width_func_p1,low,high,7); //9
 	ffit1->SetParNames("a0","a1","a2","norm1","mean1","sigma1","norm2");
 	ffit1->SetNpx(500);
-	ffit1->SetParameters(0,0,0,4000,peak1,11,4000);
+	ffit1->SetParameters(0,0,0,4000,peak1,11,200);
 
 	// Turn off linear background terms, fix peak positions
 	ffit1->FixParameter(2,0);		// Makes it a linear background
@@ -1108,14 +1112,19 @@ vector < double > double_gauss_area_p1(double peak1, double peak2, TH1D *H0){
 	// ffit1->FixParameter(4,peak1);  //////// WORK ON THIS
 	// ffit1->FixParameter(7,peak2); /////////
 
-	ffit1->SetParLimits(4,peak1-15,peak1+10);
+	ffit1->SetParLimits(4,peak1-14,peak1+5);
+
+	if(detLoop>6) ffit1->SetParLimits(4,peak1-17,peak1+5);
+
 
 	ffit1->SetParLimits(3,0,1e8);	// Normalization
 	ffit1->SetParLimits(5,9,13);	// width range
 	ffit1->SetParLimits(6,0,1e8);
-	// ffit1->SetParLimits(8,2.5,20);
 
-	H0->Fit("ffit1","SQRE");
+	// ffit1->SetParLimits(8,2.5,20);
+	ffit1->SetParLimits(8,2.5,12); /// was commented out before
+
+	H0->Fit("ffit1","SQR"); // E
 
 	// Store fit parameters
 	double par1[7]; //9
@@ -1126,6 +1135,13 @@ vector < double > double_gauss_area_p1(double peak1, double peak2, TH1D *H0){
 	TLine *line2 = new TLine(peak2,H0->GetMinimum(),peak2,1.05*H0->GetMaximum());
 	line1->Draw("SAME");
 	line2->Draw("SAME");
+
+	TLine *line3 = new TLine(par1[4],H0->GetMinimum(),par1[4],1.05*H0->GetMaximum());
+	TLine *line4 = new TLine(par1[4]+24,H0->GetMinimum(),par1[4]+24,1.05*H0->GetMaximum());
+	line3->SetLineColor(kViolet);
+	line4->SetLineColor(kViolet);
+	line3->Draw("SAME");
+	line4->Draw("SAME");
 
 	//Draw the individual peaks
 	TF1 *peak1fit = new TF1("peak1fit",fit_single_gauss_func,low,high,6);
@@ -1162,7 +1178,8 @@ vector < double > double_gauss_area_p1(double peak1, double peak2, TH1D *H0){
 	// results format: [area, area err, chi2NDF, sigma1, sigma2, linear, offset]
 	vector < double > results;
 	results.push_back(ffit1->GetParameter(3));
-	results.push_back(ffit1->GetParError(3));
+	if(ffit1->GetParError(3) < 0.1) results.push_back(ffit1->GetParError(3));
+	else results.push_back(TMath::Sqrt(ffit1->GetParameter(3)));
 	results.push_back(chi2NDF);
 	results.push_back(par1[5]);
 	results.push_back(par1[5]); //8

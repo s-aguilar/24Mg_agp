@@ -240,8 +240,8 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	double yield_err = area_err/(charge);
 
 	double goodFit;
-	if (chi2NDF <= 1.4 && chi2NDF >=.6 ) goodFit = 0;
-	else goodFit = 1;
+	if (chi2NDF <= 1.4 && chi2NDF >=.6 ) goodFit = 1;
+	else goodFit = 0;
 
 	string runNum = fileName;
 	if (loc==1) runNum = runNum.substr(9,3);
@@ -263,6 +263,9 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 
 	c0->Clear();
+	delete ysubtracted;
+	delete h2;
+	delete h3;
 	fyield->Close();
 	fbackground->Close();
 	delete c0;

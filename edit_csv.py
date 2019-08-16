@@ -10,6 +10,7 @@ df = pd.read_excel('24MgYields.xlsx',sheet_name='Yields_24Mg_ap')
 
 pRun = df['Run'].values
 pEalpha = df['Ea (keV)'].values
+pEalpha = pEalpha.round(2) # round to 2 decimal point
 runToEalpha = {pRun[i]:pEalpha[i] for i in range(len(pRun))}
 
 Ealpha = []
