@@ -45,14 +45,11 @@ for nrg in energy_p1:
 
     # Angular distribution plots
     plt.errorbar(masked_ang_p1,masked_cross_p1,yerr=masked_err_p1,c='k',fmt='o')
-    # plt.ylim(-0.00001,0.00001)
-    # spline = CubicSpline(masked_ang_p1,masked_cross_p1)
     ang_knots = np.radians(np.linspace(0,90,91)) # RADIANSIFIED
     # y_val = spline(ang_knots)
     # plt.scatter(ang_knots,y_val,c='r')
     # plt.xticks(ticks=[0,np.pi()/4,np.pi()/2],labels=['0','$\pi/4$','$\pi/2$'])
     plt.title('%5.4f MeV - Angular Distribution'%nrg)
-    # plt.show()
 
     print('====================================================================')
     print("0 order")
@@ -96,44 +93,5 @@ for nrg in energy_p1:
     plt.show()
     print('====================================================================')
 
-
-
-
-
-
-
-
-
-
-
-# energy_p2 = p2['Energy'].values
-# angle_p2 = p2['Angle'].values
-# cross_p2 = p2['Crosssection'].values
-# crossErr_p2 = p2['Error'].values
-#
-# energy_a1 = a1['Energy'].values
-# angle_a1 = a1['Angle'].values
-# cross_a1 = a1['Crosssection'].values
-# crossErr_a1 = a1['Error'].values
-
-
-    # # Make the Cross-Section plot
-    # plt.clf()
-    # plt.plot(_a1Ealpha,_a1Cross)
-    # plt.errorbar(_a1Ealpha,_a1Cross,yerr=_a1Cross_err,fmt='b.',markersize='2')
-    # plt.yscale('log')
-    # plt.ylim(1e-6,1)
-    # plt.xlim(4,5.6)
-    # plt.xlabel('$E_{\\alpha}$ (MeV)')
-    # plt.ylabel('Differential Cross-Section (barns/sr)')
-    # plt.title('a1 %s$^{\circ}$'%ang)
-    # plt.savefig('crossSection/A1/a1_%s.png'%ang,dpi=300)
-    # plt.clf()
-    #
-    # with open("rMatrix/rMatrix_a1.dat","a") as f:
-    #     for loop in range(229):
-    #         printOut= '%f \t %d \t %.8f \t %.8f \n' %(_a1Ealpha[loop],_Angle[loop],_a1Cross[loop],_a1Cross_err[loop])
-    #         f.write(printOut)
-# """
 
 print('DONE!')
