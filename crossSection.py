@@ -103,7 +103,7 @@ for ang in AnglesList:
     _p1Cross_err = []
 
     # Average out over same angle
-    for x in range(229):    # total of 229 runs
+    for x in range(228):    # total of 228 runs
         _p1Ealpha.append(p1Ealpha[int(13*x)])
         if ang == '0':
             # print(p1Cross[x*13+6])
@@ -175,7 +175,7 @@ for ang in AnglesList:
 
 
     with open("rMatrix/rMatrix_p1.dat","a") as f:
-        for loop in range(229):
+        for loop in range(228):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p1Ealpha[loop],_Angle[loop],_p1Cross[loop],_p1Cross_err[loop])
             f.write(printOut)
 
@@ -234,7 +234,7 @@ for ang in AnglesList:
     _p2Cross_err = []
 
     # Average out over same angle
-    for x in range(229):    # total of 229 runs
+    for x in range(228):    # total of 228 runs
         _p2Ealpha.append(p2Ealpha[int(13*x)])
         if ang == '0':
             # print(p2Cross[x*13+6])
@@ -303,7 +303,7 @@ for ang in AnglesList:
     plt.clf()
 
     with open("rMatrix/rMatrix_p2.dat","a") as f:
-        for loop in range(229):
+        for loop in range(228):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p2Ealpha[loop],_Angle[loop],_p2Cross[loop],_p2Cross_err[loop])
             f.write(printOut)
 # """
@@ -357,7 +357,7 @@ for ang in AnglesList:
     _a1Cross_err = []
 
     # Average out over same angle
-    for x in range(229):    # total of 229 runs
+    for x in range(228):    # total of 228 runs
         _a1Ealpha.append(a1Ealpha[int(13*x)])
         if ang == '0':
             # print(a1Cross[x*13+6])
@@ -425,7 +425,7 @@ for ang in AnglesList:
     plt.clf()
 
     with open("rMatrix/rMatrix_a1.dat","a") as f:
-        for loop in range(229):
+        for loop in range(228):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_a1Ealpha[loop],_Angle[loop],_a1Cross[loop],_a1Cross_err[loop])
             f.write(printOut)
 # """

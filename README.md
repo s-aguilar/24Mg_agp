@@ -17,3 +17,5 @@ edit_csv.py takes the output from above (Yields/P1/_P1.csv) and also the 24Mg ru
 
 
 crossSection.py calculates the respective yields to differential cross-sections and then plots it as a function of E_alpha.
+
+crossSectionExp.py is the same as the previous however I normalized the cross-sections at certain angles with some factor James calculated from an isotropic resonance. This is to correct for issues we had with the efficiencies

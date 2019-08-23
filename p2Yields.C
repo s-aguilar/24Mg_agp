@@ -331,9 +331,7 @@ void p2Yields(){
 	for(int i=159;i<upToRun;i++){
 
 		// Skip bad runs
-		if(i==163) continue;
-		else if(i==164) continue;
-		else if(i==166) continue;
+		if(i>=163 && i<=166) continue;
 		else if(i==182) continue;
 		else if(i==244) continue;
 		else if(i==164) continue;

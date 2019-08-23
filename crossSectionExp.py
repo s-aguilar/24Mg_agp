@@ -4,10 +4,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 """
-I normalized the cross-section with some factor James calculated from an
-isotropic resonance. In addition, I manually suppressed some large error bars
-such that it does not disable log plotting in Azure. For this I artificially
-assign an error bar
+I normalized the cross-sections at certain angles with some factor James
+calculated from an isotropic resonance. This is to correct for issues we had
+with the efficiencies. In addition, I manually suppressed some large
+error bars such that it does not disable log plotting in Azure. For this I
+artificially assign an error bar. This feature can easily be disabled
 # """
 
 # This function checks to see if the errror is larger than the measurement,
@@ -127,7 +128,7 @@ for ang in AnglesList:
     _p1Cross_err = []
 
     # Average out over same angle
-    for x in range(229):    # total of 229 runs
+    for x in range(228):    # total of 228 runs
         _p1Ealpha.append(p1Ealpha[int(13*x)])
         if ang == '0':
             # print(p1Cross[x*13+6])
@@ -215,7 +216,7 @@ for ang in AnglesList:
 
 
     with open("rMatrix/rMatrix_p1.dat","a") as f:
-        for loop in range(229):
+        for loop in range(228):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p1Ealpha[loop],_Angle[loop],_p1Cross[loop],_p1Cross_err[loop])
             f.write(printOut)
 
@@ -266,7 +267,7 @@ p2Ealpha = df2['Ea'].values/1000    # Convert keV to MeV
 
 
 f = open("rMatrix/rMatrix_p2.dat","w")
-f.close()
+f.close("legend_out/coef_curve/")
 
 
 for ang in AnglesList:
@@ -277,7 +278,7 @@ for ang in AnglesList:
 
 
     # Average out over same angle
-    for x in range(229):    # total of 229 runs
+    for x in range(228):    # total of 228 runs
         _p2Ealpha.append(p2Ealpha[int(13*x)])
         if ang == '0':
             # print(p2Cross[x*13+6])
@@ -360,7 +361,7 @@ for ang in AnglesList:
     plt.clf()
 
     with open("rMatrix/rMatrix_p2.dat","a") as f:
-        for loop in range(229):
+        for loop in range(228):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p2Ealpha[loop],_Angle[loop],_p2Cross[loop],_p2Cross_err[loop])
             f.write(printOut)
 # """
@@ -414,7 +415,7 @@ for ang in AnglesList:
     _a1Cross_err = []
 
     # Average out over same angle
-    for x in range(229):    # total of 229 runs
+    for x in range(228):    # total of 228 runs
         _a1Ealpha.append(a1Ealpha[int(13*x)])
         if ang == '0':
             # print(a1Cross[x*13+6])
@@ -502,7 +503,7 @@ for ang in AnglesList:
     plt.clf()
 
     with open("rMatrix/rMatrix_a1.dat","a") as f:
-        for loop in range(229):
+        for loop in range(228):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_a1Ealpha[loop],_Angle[loop],_a1Cross[loop],_a1Cross_err[loop])
             f.write(printOut)
 # """
