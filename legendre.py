@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.integrate as integrate
+from chi2 import chi2_det,chi2_mat
 from scipy.interpolate import CubicSpline
 
 
@@ -12,8 +13,11 @@ Reads in the cross-section data produced by 'crossSectionExp.py' file and
 performs a fit using even terms in the legendre polynomial on the angular
 distributions.
 
-The 'plot' variable enables/disables the plots demonstrating the different
-order legendre polynomial fits
+The 'plot_x' variable enables/disables the plots demonstrating the different
+order legendre polynomial fits for either 'a' analytic or 'n' numeric fit
+
+Around line 110 there is a stop variable that can be turned off, it is used for
+debugging purposes.
 """
 
 
@@ -56,7 +60,7 @@ for ch in channels:
 
 
     # If plot is 0 then no plotting, any other value it will generate the plots
-    plot = 0
+    plot_n = 0
 
 
     # Passing list to a set does not preserve the original order (ascending) so
@@ -72,20 +76,43 @@ for ch in channels:
 
         masked_nrg_chan = chan_temp['Energy'].values
         masked_ang_chan = np.radians(chan_temp['Angle'].values)
-        # print(nrg, masked_ang_chan)
         masked_cross_chan = chan_temp['Cross-section'].values
         masked_err_chan = chan_temp['Error'].values
-        for blah in masked_err_chan:
-            print(blah)
-        temp_weights = [1/(_*_) for _ in masked_err_chan]
 
+        # # Debugging diving by 0 errors ( only in p1 file, 90deg detector, lowest energy 3.99MeV, fixed manually)
+        # for blah in range(len(masked_err_chan)):
+        #     print(masked_nrg_chan[blah],'\t',masked_ang_chan[blah],'\t',masked_err_chan[blah]) #### TESTING IN/outputs
+
+        temp_weights = [1/_**2 for _ in masked_err_chan]
 
         ang_knots = np.radians(np.linspace(0,90,91)) # RADIANSIFIED
         spline = CubicSpline(masked_ang_chan,masked_cross_chan) # not really needed but nice to look at
         y_val = spline(ang_knots)
 
-        for ind in range(0,6):
+
+        # Up to Legendre Polynomial BLAH in legendre_order[list] index starts from 0
+        leg_ord = 1
+
+
+        # Loop through the number of terms used in Legendre expansion:
+        # -- a0, a0+a2, ... , a0+a2+a4+a6+a8+a10
+        for ind in range(0,leg_ord+1): # TURN OFF THE HIGHER ORDER LEGENDERE POLYNOMIALS (was 6)
             coef,full = np.polynomial.legendre.legfit(np.cos(masked_ang_chan),masked_cross_chan,deg=legendre_order[ind],full=True,w=temp_weights)
+
+            # print(full)
+            """ INVESTIGATE THIS!!!! i dont think dividing by the sum works correctly!
+            I don't think I can extract a chi2 from the python/numpy fitting routine
+            """
+            # chi2ndf = full[0][0]/np.sum(np.array([1/masked_err_chan[i]**2 for i in range(len(masked_err_chan))])) / (7-(ind+1))
+            # print(chi2ndf)
+
+            # print('Results from cookbook python minimization:\n',coef)
+            # chi2_det(masked_cross_chan,masked_err_chan,ind)
+            results = chi2_mat(masked_cross_chan,masked_err_chan,ind)
+
+            # TURN ON/OFF if you want to debug values
+            # stop = input('...Pause...\n\n')
+
 
             # THIS NEEDS TO BE THOUGHT OUT, WHEN TO SCALE BY 4PI
             # Append the coefficients of the fits to the lists and multiply by 4pi
@@ -93,11 +120,12 @@ for ch in channels:
 
             dict_ord[str(legendre_order[ind][-1])].append(coef)
 
-            if plot:
+            if plot_n:
                 plt.scatter(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),coef),c=color_order[ind],s=8,label='%d'%legendre_order[ind][-1])
 
+
         # Angular distribution plots
-        if plot:
+        if plot_n:
             plt.errorbar(masked_ang_chan,masked_cross_chan,yerr=masked_err_chan,c='k',fmt='o')    # Original data points
             plt.plot(ang_knots,y_val,c='k')                                                 # Spline of data points
             plt.xticks(ticks=[0,np.pi/4,np.pi/2],labels=['0','$\pi/4$','$\pi/2$'])
@@ -105,34 +133,34 @@ for ch in channels:
             plt.legend()
             plt.show()
 
-    """ Can turn this back on after
+    # """ Can turn this back on with un/commenting
     # Now we have all the coefficients for each order fit, lets plot them
     ## plot 'a' coefficients for each order as function of energy
     ord_step = 0
     print('-Working on plotting the coefficients')
-    for ind in range(0,6):
+    for ind in range(0,leg_ord+1):
         # a0 = []
         # for _ in dict_ord[str(legendre_order[ind][-1])]:
         #     a0.append(_[0])
-        for ord_step in range(0,6):
+        for ord_step in range(0,leg_ord+1):
             plt.clf()
             if ind > ord_step: continue
             a = [ (_[ind],) for _ in dict_ord[str(legendre_order[ord_step][-1])]]
             plt.scatter(energyList,a,s=8)
             plt.title('%s channel - Legendre Polynomial a$_{%s}$ coefficients for an up to a$_{%s}$ fit' % (ch,legendre_order[ind][-1],legendre_order[ord_step][-1]))
             # plt.show()
-            plt.savefig('legendre_out/coef_curve/%s/a%d/a%dFit.png'%(ch,legendre_order[ind][-1],legendre_order[ord_step][-1]),dpi=900)
+            plt.savefig('legendre_out/coef_curve/numerically/%s/a%d/a%dFit.png'%(ch,legendre_order[ind][-1],legendre_order[ord_step][-1]),dpi=900)
             ord_step += 1
     # """
 
     # Now organize into pandas dataframe and write it as both 'csv' and 'xlsx' format
     print('-Writing coefficients into .csv and .xlsx files')
     colLabels = ['a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','a10']
-    for _ in range(0,6):
+    for _ in range(0,leg_ord+1):
         stuff = dict_ord[str(legendre_order[_][-1])]
         df = pd.DataFrame(data=stuff,index=energyList,columns=colLabels[0:_*2+1])
-        df.to_csv('legendre_out/CSV/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
-        df.to_excel('legendre_out/CSV/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        df.to_csv('legendre_out/CSV/numerically/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        df.to_excel('legendre_out/CSV/numerically/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
 
 
     # Now spline the 'a' coefficients and plot as function of energy and overlay
@@ -151,7 +179,7 @@ for ch in channels:
     a = [ (_[0],) for _ in ord_0]
     plt.scatter(energyList,ord_0)
     plt.title('%s channel - a0 vs E' % ch)
-    plt.savefig('legendre_out/excitationCurve/%s/a0Curve.png' % ch,dpi=900)
+    plt.savefig('legendre_out/excitationCurve/numerically/%s/a0Curve.png' % ch,dpi=900)
     # plt.show()
 
     #### NOtE: NEED TO PROBABLY MAKE 2 SPLINES BECAUSE WE HAVE THAT LARGE step
@@ -175,117 +203,5 @@ for ch in channels:
     # continue
     print('\n\n')
 # """
-
-
-
-
-"""
-angle = np.array([0,15,30,45,60,75,90])
-
-# for ang in angle:
-#     is_angle = p1['Angle']==ang     # create boolean mask
-#     p1_temp = p1[is_angle]
-
-energy_p1 = p1['Energy'].values
-angle_p1 = p1['Angle'].values
-cross_p1 = p1['Cross-section'].values
-crossErr_p1 = p1['Error'].values
-
-
-legendre_order = [[0],[0,2],[0,2,4],[0,2,4,6],[0,2,4,6,8],[0,2,4,6,8,10]]
-color_order = ['b','g','r','c','m','y']
-
-ord_0 = []
-ord_2 = []
-ord_4 = []
-ord_6 = []
-ord_8 = []
-ord_10 = []
-
-dict_ord = {'0':ord_0,'2':ord_2,'4':ord_4,'6':ord_6,'8':ord_8,'10':ord_10}
-
-
-# If plot is 0 then no plotting, any other value it will plot
-plot = 0
-
-
-# Passing list to a set does not preserve the original order (ascending) so
-# manually sort it back into a new list
-temp_nrg = set()
-energySet = [x for x in energy_p1 if not (x in temp_nrg or temp_nrg.add(x))]
-
-
-# perform Legendre fit over the angular distribution at each energy
-for nrg in energySet:
-    is_nrg = p1['Energy']==nrg      # create boolean mask
-    p1_temp = p1[is_nrg]
-
-    masked_nrg_p1 = p1_temp['Energy'].values
-    masked_ang_p1 = np.radians(p1_temp['Angle'].values)
-    masked_cross_p1 = p1_temp['Cross-section'].values
-    masked_err_p1 = p1_temp['Error'].values
-
-    ang_knots = np.radians(np.linspace(0,90,91)) # RADIANSIFIED
-    spline = CubicSpline(masked_ang_p1,masked_cross_p1) # not really needed but nice to look at
-    y_val = spline(ang_knots)
-
-    for ind in range(0,6):
-        coef,full = np.polynomial.legendre.legfit(np.cos(masked_ang_p1),masked_cross_p1,deg=legendre_order[ind],full=True)
-        dict_ord[str(legendre_order[ind][-1])].append(coef)
-
-        if plot:
-            plt.scatter(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),coef),c=color_order[ind],s=8,label='%d'%legendre_order[ind][-1])
-
-    # Angular distribution plots
-    if plot:
-        plt.errorbar(masked_ang_p1,masked_cross_p1,yerr=masked_err_p1,c='k',fmt='o')    # Original data points
-        plt.plot(ang_knots,y_val,c='k')                                                 # Spline of data points
-        plt.xticks(ticks=[0,np.pi/4,np.pi/2],labels=['0','$\pi/4$','$\pi/2$'])
-        plt.title('%5.4f MeV - Angular Distribution' % nrg)
-        plt.legend()
-        plt.show()
-
-
-# Now we have all the coefficients for each order fit, lets plot them
-## plot 'a' coefficients for each order as function of energy
-ord_step = 0
-for ind in range(0,6):
-    # a0 = []
-    # for _ in dict_ord[str(legendre_order[ind][-1])]:
-    #     a0.append(_[0])
-    for ord_step in range(0,6):
-        plt.clf()
-        if ind > ord_step: continue
-        a = [ (_[ind],) for _ in dict_ord[str(legendre_order[ord_step][-1])]]
-        plt.scatter(energySet,a,s=8)
-        plt.title('Legendre Polynomial a$_{%s}$ coefficients for an up to a$_{%s}$ fit' % (legendre_order[ind][-1],legendre_order[ord_step][-1]))
-        # plt.show()
-        plt.savefig('legendre_out/coef_curve/%s/a%d/a%dFit'%(ch,legendre_order[ind][-1],legendre_order[ord_step][-1]),dpi=900)
-        ord_step += 1
-
-# Now organize into pandas dataframe and write it as both 'csv' and 'xlsx' format
-colLabels = ['a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','a10']
-for _ in range(0,6):
-    stuff = dict_ord[str(legendre_order[_][-1])]
-    df = pd.DataFrame(data=stuff,index=energySet,columns=colLabels[0:_*2+1])
-    df.to_csv('legendre_out/CSV/a%d/a%dFit.csv'%(legendre_order[_][-1],legendre_order[_][-1]))
-    df.to_excel('legendre_out/CSV/a%d/a%dFit.xlsx'%(legendre_order[_][-1],legendre_order[_][-1]))
-
-
-# Now spline the 'a' coefficients and plot as function of energy and overlay
-# the original 'a' coefficents and make sure the splining is done well
-
-# """
-
-
-
-
-
-
-"""
-#     print("0 order")
-#     # coef0 = np.polynomial.legendre.Legendre.fit(np.cos(masked_ang_p1),masked_cross_p1,deg=0,domain=[0,90]) # Investigate the difference between both legendre fitting algos
-#     # print (coef0)
-"""
 
 print('DONE!')
