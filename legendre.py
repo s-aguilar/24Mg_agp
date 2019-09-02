@@ -33,7 +33,7 @@ dict_channels = {'p1':p1,'p2':p2,'a1':a1}
 
 
 # """ once everything is debugged put it all in the for loop here
-channels = ['p1']#,'p2','a1']
+channels = ['p1','p2','a1']
 for ch in channels:
     print(ch,' channel:\n-Working on Legendre fitting')
     angle = np.array([0,15,30,45,60,75,90])
@@ -83,7 +83,7 @@ for ch in channels:
     # Passing list to a set does not preserve the original order (ascending) so
     # manually sort it back into a new list
     temp_nrg = set()
-    energyList = [x for x in energy_chan if not (x in temp_nrg or temp_nrg.add(x))]
+    energyList = np.array([x for x in energy_chan if not (x in temp_nrg or temp_nrg.add(x))],dtype=np.float64)
 
 
     # perform Legendre fit over the angular distribution at each energy
@@ -91,7 +91,7 @@ for ch in channels:
         is_nrg = chan['Energy']==nrg      # create boolean mask
         chan_temp = chan[is_nrg]
 
-        print(nrg)
+        # print(nrg)
 
         masked_nrg_chan = chan_temp['Energy'].values
         masked_ang_chan = np.radians(chan_temp['Angle'].values)
@@ -152,6 +152,8 @@ for ch in channels:
         elif plot_a:
             pass
 
+    ord_00 = np.array(ord_00)
+
 
     # Now we have all the coefficients for each order fit, lets plot them
     # plot 'a' coefficients for each order as function of energy as well as
@@ -201,39 +203,57 @@ for ch in channels:
     # the original 'a' coefficents and make sure the splining is done well.
 
     #####Currently only doing the a0 of the order 0 fit to debug the process!!!!!!
-    e_knots = np.linspace(min(energyList),max(energyList),1001)
-    spline = CubicSpline(energyList,ord_0)
+    e_knots = np.linspace(min(energyList),max(energyList),301)
+
+    temp_ord_00 = 4*np.pi*np.array([_[0] for _ in ord_00])
+
+    # spline = CubicSpline(energyList,ord_0)
+    # spline = CubicSpline(energyList,temp_ord_00)
     y_val = spline(e_knots)
 
-    # I want to spline from # <= 4.03514 and spline # > 4.03514
+    temp_ord_00 = 4*np.pi*np.array([_[0] for _ in ord_00])
+
+    # I want to spline from # <= 4.03514 and spline # > 4.26996
+    e_knots_mask1 = e_knots <= 4.03514
     spline1_mask = energyList <= 4.03514
-    spline2_mask = energyList > 4.03514
+    spline1 = CubicSpline(energyList[spline1_mask],temp_ord_00[spline1_mask])
+    y_val1 = spline1(e_knots[e_knots_mask1])
 
-    spline1 = CubicSpline(energyList[spline1_mask],ord_0[spline1_mask])
+    e_knots_mask2 = e_knots >= 4.26996
+    spline2_mask = energyList >= 4.26996
+    spline2 = CubicSpline(energyList[spline2_mask],temp_ord_00[spline2_mask])
+    y_val2 = spline2(e_knots[e_knots_mask2])
 
 
+    # Plot the splines and the points
+    plt.clf()
+    plt.plot(e_knots[e_knots_mask1],y_val1,c='b')
+    plt.plot(e_knots[e_knots_mask2],y_val2,c='b')
+    a0 = temp_ord_00
+    plt.scatter(energyList,temp_ord_00)
+    plt.title('%s channel - a0 vs E' % ch)
+    plt.savefig('legendre_out/excitationCurve/numerically/%s/a0Curve.png' % ch,dpi=900)
+    # plt.show()
 
+    #### NOtE: NEED TO PROBABLY MAKE 2 SPLINES BECAUSE WE HAVE THAT LARGE step
+    # DOWN INTO LOW ENERGY AND THE SPLINE INTERPOLATION IN BETWEEN both
+    # regions IS NONSENSE. NEED TO ADDRESS THIS!
+    solidAngle = 4*np.pi
+    # totalCross0 = spline.integrate(min(e_knots[e_knots_mask1]),max(e_knots[e_knots_mask1]))
+    # totalCross0 += spline.integrate(min(e_knots[e_knots_mask2]),max(e_knots[e_knots_mask2]))
+    # totalCross1 = integrate.quad(spline1,min(e_knots[e_knots_mask1]),max(e_knots[e_knots_mask1]))
+    # totalCross1 += integrate.quad(spline2,min(e_knots[e_knots_mask2]),max(e_knots[e_knots_mask2]))
+    totalCross2 = integrate.romberg(spline1,min(e_knots[e_knots_mask1]),max(e_knots[e_knots_mask1]))
+    totalCross2 += integrate.romberg(spline2,min(e_knots[e_knots_mask2]),max(e_knots[e_knots_mask2]))
 
-    # plt.clf()
-    # plt.plot(e_knots,y_val)
-    # a = [ (_[0],) for _ in ord_0]
-    # plt.scatter(energyList,ord_0)
-    # plt.title('%s channel - a0 vs E' % ch)
-    # plt.savefig('legendre_out/excitationCurve/numerically/%s/a0Curve.png' % ch,dpi=900)
-    # # plt.show()
-    #
-    # #### NOtE: NEED TO PROBABLY MAKE 2 SPLINES BECAUSE WE HAVE THAT LARGE step
-    # # DOWN INTO LOW ENERGY AND THE SPLINE INTERPOLATION IN BETWEEN both
-    # # regions IS NONSENSE. NEED TO ADDRESS THIS!
-    # solidAngle = 4*np.pi
-    # totalCross0 = solidAngle*spline.integrate(min(e_knots),max(e_knots))
-    # totalCross1 = solidAngle*integrate.quad(spline,min(e_knots),max(e_knots))
-    # totalCross2 = solidAngle*integrate.romberg(spline,min(e_knots),max(e_knots))
-    #
-    # print("The absolute cross section is:")
+    # totalCross0 = solidAngle*totalCross0
+    # totalCross1 = solidAngle*totalCross1[2]
+    # totalCross2 = solidAngle*totalCross2
+
+    print("The absolute cross section is:")
     # print(totalCross0)
     # print(totalCross1)
-    # print(totalCross2)
+    print(totalCross2)
 
 
 
