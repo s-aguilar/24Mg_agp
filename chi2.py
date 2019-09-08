@@ -1,4 +1,6 @@
 import numpy as np
+import scipy
+from scipy import special
 
 """
 Compute analytically the legendre parameters that minimizes chi2 a la
@@ -15,7 +17,14 @@ MATRIX Method:
 ###############################################################################
 ###############################################################################
 ###############################################################################
+"""
+CALCULATE P-values
+"""
+def pValue(numOfData,numOfPars,x2):
+    return 1-scipy.special.gammainc( (numOfData - numOfPars)*.5 , x2*.5 )
 
+###############################################################################
+###############################################################################
 
 """
 DETERMINANT METHOD, NO ERROR ESTIMATES ON PARAMETERS
@@ -172,33 +181,49 @@ def chi2_mat(data,data_unc,order):
     # Calculate chi2 per degree of freedom
     chi2 = 0
     chi2ndf = 0
-    if order == 0:
-        temp1 = data-np.polynomial.legendre.legval(x,[aCoef_matrix[0]])
-        temp2 = np.multiply(temp1**2,weights)
-        chi2 = np.sum(temp2)
-    elif order == 1:
-        temp1 = data-np.polynomial.legendre.legval(x,[aCoef_matrix[0],0,aCoef_matrix[1]])
-        temp2 = np.multiply(temp1**2,weights)
-        chi2 = np.sum(temp2)
+
+
+    # Prepare a new list of coefficients (Read the 'convert' function definition
+    # in 'legendre.py')
+    new = []
+    for _ in aCoef_matrix:
+        new.append(_)
+        new.append(0)
+
+    # Pop the last 0 that is unnecessary
+    new.pop()
+
+    temp1 = data-np.polynomial.legendre.legval(x,new)
+    temp2 = np.multiply(temp1**2,weights)
+    chi2 = np.sum(temp2)
+
 
     chi2ndf = chi2/(len(data)-rank)
 
-    # Extract the errors for each coefficient and store in array
+    """
+    # Calculate errors for each coefficient from error matrix and store in list
+    # MAKE THIS CORRECT
+    """
     for row in range(rank):
         a_var_temp = 0
         for col in range(rank):
             if row == col:
                 a_var_temp += alpha_pinv[row][col]
-            else:
-                a_var_temp += 2*alpha_pinv[row][col]
+            # else:
+            #     a_var_temp += 2*alpha_pinv[row][col]
+
         # Used if encountering a negative value. investigate this some more
         try:
             a_errs[row] = np.sqrt(a_var_temp)
-        except RuntimeWarning:
-            print('problem')
+        # except RuntimeWarning as err:
+        except Exception:
+            print('A problem was encountered:')
             a_errs[row] = 0
 
     # print('\nErr:\n',a_errs)
 
-    results = [aCoef_matrix,a_errs,[chi2,chi2ndf]]
+    # Calculate p-value
+    pVal = pValue(len(angles),rank,chi2)
+
+    results = [aCoef_matrix,a_errs,chi2,chi2ndf,pVal]
     return results
