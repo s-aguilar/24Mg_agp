@@ -61,7 +61,7 @@ dict_channels = {'p1':p1,'p2':p2,'a1':a1}
 # If plot is 0 then no plotting, any other value it will generate the plots
 # 'n' for numerical solution plots, 'a' for analytic solution plots
 plot_n = 0
-plot_a = 1
+plot_a = 0
 
 
 # """
@@ -188,6 +188,7 @@ for ch in channels:
     # Convert lists into arrays
     for ind in range(0,leg_ord+1):
         dict_ord_a[str(legendre_order[ind][-1])] = np.array(dict_ord_a[str(legendre_order[ind][-1])])
+        dict_ord_err_a[str(legendre_order[ind][-1])] = np.array(dict_ord_err_a[str(legendre_order[ind][-1])])
 
 
     # Now we have all the coefficients for each order fit, lets plot them
@@ -211,7 +212,7 @@ for ch in channels:
 
         x2 = dict_ord_x2_a[str(legendre_order[ind][-1])]
         x2ndf = dict_ord_x2ndf_a[str(legendre_order[ind][-1])]
-        print(str(legendre_order[ind][-1]))
+        # print(str(legendre_order[ind][-1]))
         plt.scatter(energyList,x2ndf,s=8)
         plt.title('%s channel - $\chi^{2}$ for an up to a$_{%s}$ fit' % (ch,legendre_order[ind][-1]))
         plt.savefig('legendre_out/chi2/%s/a%d/chi2.png'%(ch,legendre_order[ind][-1]),dpi=100)
@@ -243,30 +244,92 @@ for ch in channels:
         df.to_excel('legendre_out/CSV/analytically/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
 
 
+    # Now I have all the 'a_i' coefficients for all the many order fits, need
+    # to select/filter the necessary 'a0' terms from the fits. This will be
+    # done through the p-value.
+
+    """
+    Read in all my a0s and p-values and compare each energies fit side by side
+    starting from lowest order to highest, when p-value criteria is satisfied,
+    append the a0 term + continue and repeat for the next energy step
+    """
+    a0_final = []
+    a0_err_final = []
+    p_final = []
+    x2_final = []
+    order = []
+    PVAL = 0.08
+
+    for ind in range(len(ord_00)):
+        # if ord_00_pVal[ind] >= PVAL:
+        #     a0_final.append(ord_00[ind][0])
+        #     a0_err_final.append(ord_err_00[ind][0])
+        #     p_final.append(ord_00_pVal[ind])
+        #     order.append(0)
+        #
+        # elif ord_02_pVal[ind] >= PVAL:
+        #     a0_final.append(ord_02[ind][0])
+        #     a0_err_final.append(ord_err_02[ind][0])
+        #     p_final.append(ord_02_pVal[ind])
+        #     order.append(2)
+        #
+        # elif ord_04_pVal[ind] >= PVAL:
+        #     a0_final.append(ord_04[ind][0])
+        #     a0_err_final.append(ord_err_04[ind][0])
+        #     p_final.append(ord_04_pVal[ind])
+        #     order.append(4)
+        #
+        # else:
+        #     print('OH FUCK @',energyList[ind],'\n',ord_00_pVal[ind],ord_02_pVal[ind],ord_04_pVal[ind])
+        #     a0_final.append(ord_04[ind][0])
+        #     a0_err_final.append(ord_err_04[ind][0])
+        #     p_final.append(ord_04_pVal[ind])
+        #     order.append('4?')
+
+        tester_p = [ord_00_pVal[ind],ord_02_pVal[ind],ord_04_pVal[ind]]
+        tester_x2 = [ord_00_x2ndf[ind],ord_02_x2ndf[ind],ord_04_x2ndf[ind]]
+        index = tester_p.index(max(tester_p))
+        # print(tester_p,index)
+        # print(tester_x2,index)
+        if tester_p[index] == 0:
+            print('Testing with chi2')
+            index = tester_x2.index(min(tester_x2))
+
+        a0_final.append(dict_ord_a[str(legendre_order[index][-1])][ind][0])
+        a0_err_final.append(dict_ord_err_a[str(legendre_order[index][-1])][ind][0])
+        p_final.append(dict_ord_pVal_a[str(legendre_order[index][-1])][ind])
+        order.append(str(legendre_order[index][-1]))
+
+
+
+
+    df = pd.DataFrame(data=a0_final,index=energyList)
+    df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).values)
+    df = df.assign(Pval=pd.Series(p_final,index=df.index).values)
+    df = df.assign(Order=pd.Series(order,index=df.index).values)
+    df.to_csv('legendre_out/CSV/analytically/%s/%sFits.csv'%(ch,ch))
+    df.to_excel('legendre_out/CSV/analytically/%s/%sFits.xlsx'%(ch,ch))
+
+
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.
 
-    #####Currently only doing the a0 of the order 0 fit to debug the process!!!!!!
-    # e_knots = np.linspace(min(energyList),max(energyList),301)
     solidAngle = 4*np.pi
-    temp_ord_00 = solidAngle*np.array([_[0] for _ in ord_00])
+    # temp_ord_00 = solidAngle*np.array([_[0] for _ in ord_00])
+    a0_final = solidAngle*np.array(a0_final)
+    a0_err_final = solidAngle*np.array(a0_err_final)
 
 
     # I want to spline from # <= 4.03514 and spline # > 4.26996
-    # e_knots_mask1 = e_knots <= 4.03514
-    # spline1_mask = energyList <= 4.03514
     e_knots_mask1 = energyList <= 4.03514
     spline1_mask = energyList <= 4.03514
-    spline1 = CubicSpline(energyList[spline1_mask],temp_ord_00[spline1_mask])
-    # y_val1 = spline1(e_knots[e_knots_mask1])
+    spline1 = CubicSpline(energyList[spline1_mask],a0_final[spline1_mask])
     y_val1 = spline1(energyList[e_knots_mask1])
 
-    # e_knots_mask2 = e_knots >= 4.26996
-    # spline2_mask = energyList >= 4.26996
+
     e_knots_mask2 = energyList >= 4.26996
     spline2_mask = energyList >= 4.26996
-    spline2 = CubicSpline(energyList[spline2_mask],temp_ord_00[spline2_mask])
-    # y_val2 = spline2(e_knots[e_knots_mask2])
+    spline2 = CubicSpline(energyList[spline2_mask],a0_final[spline2_mask])
     y_val2 = spline2(energyList[e_knots_mask2])
 
 
@@ -274,8 +337,7 @@ for ch in channels:
     plt.clf()
     plt.plot(energyList[e_knots_mask1],y_val1,c='b')
     plt.plot(energyList[e_knots_mask2],y_val2,c='b')
-    a0 = temp_ord_00
-    plt.scatter(energyList,temp_ord_00)
+    plt.scatter(energyList,a0_final)
     plt.title('%s channel - a0 vs E - Cross-section' % ch)
     plt.savefig('legendre_out/excitationCurve/analytically/%s/a0Curve.png' % ch,dpi=100)
     plt.clf()
@@ -286,8 +348,8 @@ for ch in channels:
     # totalCross0 += spline.integrate(min(e_knots[e_knots_mask2]),max(e_knots[e_knots_mask2]))
     # totalCross1 = integrate.quad(spline1,min(e_knots[e_knots_mask1]),max(e_knots[e_knots_mask1]))
     # totalCross1 += integrate.quad(spline2,min(e_knots[e_knots_mask2]),max(e_knots[e_knots_mask2]))
-    totalCross2 = integrate.romberg(spline1,min(energyList[e_knots_mask1]),max(energyList[e_knots_mask1]))
-    totalCross2 += integrate.romberg(spline2,min(energyList[e_knots_mask2]),max(energyList[e_knots_mask2]))
+    totalCross2 = integrate.romberg(spline1,min(energyList[e_knots_mask1]),max(energyList[e_knots_mask1]),divmax=20)
+    totalCross2 += integrate.romberg(spline2,min(energyList[e_knots_mask2]),max(energyList[e_knots_mask2]),divmax=20)
 
     # totalCross0 = totalCross0
     # totalCross1 = totalCross1[2]
@@ -309,24 +371,30 @@ for ch in channels:
     if ch == 'a1':
         mu = _m24Mg*_m4He/(_m24Mg+_m4He) # reduced mass
 
-    # print(mu)
 
     rxnRate = []
     for T in temperature:
 
         E1 = energyList[spline1_mask]
-        integrand1 = CubicSpline(E1,a0[spline1_mask]*np.exp(-11.604*E1/T))
+        integrand1 = CubicSpline(E1,a0_final[spline1_mask]*np.exp(-11.604*E1/T))
 
         E2 = energyList[spline2_mask]
-        integrand2 = CubicSpline(E2,a0[spline2_mask]*np.exp(-11.604*E2/T))
+        integrand2 = CubicSpline(E2,a0_final[spline2_mask]*np.exp(-11.604*E2/T))
 
-        intg = integrate.romberg(integrand1,min(energyList[e_knots_mask1]),max(energyList[e_knots_mask1]))
-        intg += integrate.romberg(integrand2,min(energyList[e_knots_mask2]),max(energyList[e_knots_mask2]))
+        intg = integrate.romberg(integrand1,min(energyList[e_knots_mask1]),max(energyList[e_knots_mask1]),divmax=20)
+        intg += integrate.romberg(integrand2,min(energyList[e_knots_mask2]),max(energyList[e_knots_mask2]),divmax=20)
 
         rate =  3.7313E10* mu**(-.5) * T**(-1.5) * intg
         rxnRate.append(rate)
 
     rxnRate = np.array(rxnRate)
+    plt.scatter(temperature,rxnRate)
+    plt.plot(temperature,rxnRate)
+    plt.yscale('log')
+    plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)')
+    plt.xlabel('Temperature (T9)')
+    plt.savefig('%s_ReactionRate.png'%ch)
+    plt.clf()
     df = pd.DataFrame(data=rxnRate,index=temperature,columns=['Rate (cm^3 mol^-1 s^-1)'])
     df.to_csv('legendre_out/CSV/analytically/%s/a%d/rates.csv'%(ch,legendre_order[0][-1]))
     df.to_excel('legendre_out/CSV/analytically/%s/a%d/rates.xlsx'%(ch,legendre_order[0][-1]))

@@ -21,7 +21,8 @@ MATRIX Method:
 CALCULATE P-values
 """
 def pValue(numOfData,numOfPars,x2):
-    return 1-scipy.special.gammainc( (numOfData - numOfPars)*.5 , x2*.5 )
+    # return 1 - scipy.special.gammainc( (numOfData - numOfPars)*.5 , x2*.5 )
+    return scipy.special.gammaincc( (numOfData - numOfPars)*.5 , x2*.5 )
 
 ###############################################################################
 ###############################################################################
@@ -111,7 +112,7 @@ def chi2_mat(data,data_unc,order):
 
     angles = np.radians([0,15,30,45,60,75,90])
     x = np.cos(angles)
-    weights = np.array([1/data_unc[i]**2 for i in range(len(data))])     # 1/sig_i**2 array
+    weights = np.array([1/data_unc[i]**2 for i in range(len(data))])
 
 
     # Needed for creating the legendre coefficient array 'legCoef' with proper
@@ -120,11 +121,13 @@ def chi2_mat(data,data_unc,order):
     legCoef = np.zeros(dim)
 
     rank = order+1
-    legDeriv_a = np.zeros(rank,dtype=object)     # Will store array objects in the indices
+
+    # Store array objects in the indices
+    legDeriv_a = np.zeros(rank,dtype=object)
 
 
     # The derivatives w.r.t 'a_i' of the Legendre polynomial extract the value
-    # of the i'th term in the expansion and are stored in the 'legDeriv_a' array
+    # of i'th term in the expansion and are stored in the 'legDeriv_a' array
     for ind in range(0,dim,2):
 
         # Select out only the i'th term (even terms of Legendre)
@@ -183,8 +186,8 @@ def chi2_mat(data,data_unc,order):
     chi2ndf = 0
 
 
-    # Prepare a new list of coefficients (Read the 'convert' function definition
-    # in 'legendre.py')
+    # Prepare a new list of coefficients (Read the 'convert' function
+    # definition in 'legendre.py')
     new = []
     for _ in aCoef_matrix:
         new.append(_)
@@ -200,9 +203,9 @@ def chi2_mat(data,data_unc,order):
 
     chi2ndf = chi2/(len(data)-rank)
 
+
     """
     # Calculate errors for each coefficient from error matrix and store in list
-    # MAKE THIS CORRECT
     """
     for row in range(rank):
         a_var_temp = 0
@@ -226,4 +229,5 @@ def chi2_mat(data,data_unc,order):
     pVal = pValue(len(angles),rank,chi2)
 
     results = [aCoef_matrix,a_errs,chi2,chi2ndf,pVal]
+
     return results
