@@ -1,0 +1,37 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Monaco;}
+{\colortbl;\red255\green255\blue255;\red0\green255\blue0;\red0\green0\blue0;\red47\green255\blue18;
+\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cspthree\c528\c100000\c0;\cspthree\c0\c0\c0\c79916;\cssrgb\c15686\c99608\c7843;
+\csgray\c0\c90000;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 ssh -Y spectro@fowler2.phys.nd.edu\
+pw: graph1\
+\
+	ssh -Y nsluser@isnap-16\
+	pw: nsl\
+\
+	cd Compass/N15_pag/DAQ\
+\
+	
+\f1\fs28 \cf2 \cb3 \CocoaLigature0 rsync -av --progress run_*/UNFILTERED/compass_run_*.root saguilar@crcfe01.crc.nd.edu:/afs/crc.nd.edu/group/nsl/activetarget/users/saguilar/24Mg_ap/\
+
+\f0\fs24 \cf0 \cb1 \CocoaLigature1 \
+\
+Spectra after extract_spectra.C\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\fs30 \cf4 \cb5 \CocoaLigature0 /afs/crc.nd.edu/group/nsl/ast/vol/astVol01/staging/n15pag/analysis/spectra
+\f0\fs24 \cf0 \cb1 \CocoaLigature1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\
+ssh -Y spectro@crcfe01.nd.edu\
+pw: graph$15\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\fs30 \cf4 \cb5 \CocoaLigature0 spectro@crcfe01:DAQ$ pwd\
+/afs/crc.nd.edu/group/nsl/ast/vol/astVol01/staging/n15pag/data/N15_pag/DAQ}
