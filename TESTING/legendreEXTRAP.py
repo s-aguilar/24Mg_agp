@@ -18,16 +18,29 @@ performs a fit using even terms in the legendre polynomial on the angular
 distributions.
 
 The 'plot_a' variable enables/disables the plots demonstrating the different
-order legendre polynomial fits for either 'a' analytic fit
+order legendre polynomial fits for 'a' analytic fit
 """
 
 
-# GetElement resturns (index,Z,A,Mass,'element')
+# GetElement returns (index,Z,A,Mass,'element')
 _m1H = GetElement(1,1)[3]
 _m4He = GetElement(2,4)[3]
 _m24Mg = GetElement(12,24)[3]
 _m27Al = GetElement(13,27)[3]
-_u = 931.494    # MeV/c^2
+_barnsTocm2 = 1E-24         # cm2
+_c = 2.99792458E10          # cm / s
+_u = 931.494/_c**2          # MeV / c^2
+_NA = 6.02214E23            # particles / mol
+
+
+rxnRateCONST = _barnsTocm2 * _NA * (8/(np.pi*_u))**.5 * (8.617E-2)**-1.5
+# test = 3.7313E10    # constant from literature
+# BOTH ARE EQUAL
+
+# print(rxnRateCONST)
+# print(test)
+# exit()
+
 
 
 
@@ -51,15 +64,25 @@ def convert(old):
 
 
 # Read in the data into dataframe
+
+# labels for azure fit
 # colNames = ['E_Cm','E_Ex','Angle_Cm',
 #                 'Fit_Cm_Cross','Fit_Cm_S_factor',
 #                 'Data_Cm_Cross','Data_Cm_Cross_Unc',
 #                 'Data_Cm_S_factor','Data_Cm_S_factor_Unc']
+
+#labels for azure extrapolate segment without data
 colNames = ['E_Cm','E_Ex','Angle_Cm',
                 'Fit_Cm_Cross','Fit_Cm_S_factor']
 p0 = pd.read_table('rMatrix/AZUREOut_aa=2_R=1.extrap',sep='\s+',names=colNames)
 p1 = pd.read_table('rMatrix/AZUREOut_aa=2_R=3.extrap',sep='\s+',names=colNames)
 p2 = pd.read_table('rMatrix/AZUREOut_aa=2_R=4.extrap',sep='\s+',names=colNames)
+
+
+
+# 'seg' is just the number of slices/indices in the azure2 '.extrap' file
+# 'unc' is just an artificial uncertainty that is 5% of the measurement, need
+# an uncertainty to analytically solve for the parameters
 
 
 # Put angle in lab and Energy in lab E
@@ -261,8 +284,8 @@ for ch in channels:
         df = df.assign(Chi2=pd.Series(dict_ord_x2_a[str(legendre_order[_][-1])],index=df.index).values)
         df = df.assign(Pval=pd.Series(dict_ord_pVal_a[str(legendre_order[_][-1])],index=df.index).values)
         df = df.assign(Chi2NDF=pd.Series(dict_ord_x2ndf_a[str(legendre_order[_][-1])],index=df.index).values)
-        df.to_csv('legendre_out/DATA/analytically/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
-        df.to_excel('legendre_out/DATA/analytically/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        df.to_csv('legendre_out/DATA/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        df.to_excel('legendre_out/DATA/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
 
 
     # Now I have all the 'a_i' coefficients for all the many order fits, need
@@ -301,14 +324,14 @@ for ch in channels:
     y_val1 = spline1(energyList)
 
 
-    # Plot the splines and the points
-    plt.clf()
-    plt.plot(energyList,y_val1,c='b')
-    plt.scatter(energyList,a0_final)
-    plt.yscale('log')
-    plt.title('%s channel - a0 vs E - Cross-section' % ch)
-    plt.savefig('legendre_out/excitationCurve/analytically/%s/%s_a0Curve.png' % (ch,ch),dpi=900)
-    plt.clf()
+    # # Plot the splines and the points
+    # plt.clf()
+    # plt.plot(energyList,y_val1,c='b')
+    # plt.scatter(energyList,a0_final)
+    # plt.yscale('log')
+    # plt.title('%s channel - a0 vs E - Cross-section' % ch)
+    # plt.savefig('legendre_out/excitationCurve/%s/%s_a0Curve.png' % (ch,ch),dpi=900)
+    # plt.clf()
 
 
     # Save the points, first merge the two splines
@@ -317,21 +340,21 @@ for ch in channels:
     df = df.assign(fitOrder=pd.Series(order,index=df.index).values)
     df = df.assign(splineX=pd.Series(energyList,index=df.index).values)
     df = df.assign(splineY=pd.Series(y_val1,index=df.index).values)
-    df.to_excel('legendre_out/DATA/analytically/%s/%sFitPoints.xlsx'%(ch,ch))
+    df.to_excel('legendre_out/DATA/%s/%sFitPoints.xlsx'%(ch,ch))
 
 
     # Calculate the reaction rates
     fname = 'rate_Temps.dat'
     temperature = np.loadtxt( fname )
 
-    mu = _m24Mg*_m4He/(_m27Al+_m1H) * _u
+    mu = _m24Mg*_m4He/(_m27Al+_m1H) #* _u
 
     if ch == 'a1':
-        mu = _m24Mg*_m4He/(_m24Mg+_m4He) * _u   # reduced mass
+        mu = _m24Mg*_m4He/(_m24Mg+_m4He) #* _u   # reduced mass
 
 
-    rxnRate = []
-    rxnRate1 = []
+    # rxnRate = []
+    # rxnRate1 = []
     rxnRate2 = []
     rxnRate3 = []
     rxnRate4 = []
@@ -355,8 +378,8 @@ for ch in channels:
         # plt.yscale('log')
         # plt.show()
 
-        intg = integrate.romberg(integrand1,min(energyList),max(energyList),divmax=40)
-        intg1 = integrate.quad(integrand1,min(energyList),max(energyList),limit=200)
+        # intg = integrate.romberg(integrand1,min(energyList),max(energyList),divmax=40)
+        # intg1 = integrate.quad(integrand1,min(energyList),max(energyList),limit=200)
         intg2 = 0
         for ind,elem in enumerate(E1):
             intg2 +=  a0_final[ind]*np.exp(-11.604*E1[ind]/T)*E1[ind]*dE
@@ -369,17 +392,17 @@ for ch in channels:
 
 
 
-        rate =  1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg
-        rate1 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg1[0]
-        rate2 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg2
-        rate3 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg3
-        rate4 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg4
-        rate5 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg5
-        rate6 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg6
-        rate7 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg7
+        # rate =  rxnRateCONST * T**(-1.5) * intg
+        # rate1 = rxnRateCONST * T**(-1.5) * intg1[0]
+        rate2 = rxnRateCONST * T**(-1.5) * intg2
+        rate3 = rxnRateCONST * T**(-1.5) * intg3
+        rate4 = rxnRateCONST * T**(-1.5) * intg4
+        rate5 = rxnRateCONST * T**(-1.5) * intg5
+        rate6 = rxnRateCONST * T**(-1.5) * intg6
+        rate7 = rxnRateCONST * T**(-1.5) * intg7
 
-        rxnRate.append(rate)
-        rxnRate1.append(rate1)
+        # rxnRate.append(rate)
+        # rxnRate1.append(rate1)
         rxnRate2.append(rate2)
         rxnRate3.append(rate3)
         rxnRate4.append(rate4)
@@ -387,8 +410,8 @@ for ch in channels:
         rxnRate6.append(rate6)
         rxnRate7.append(rate7)
 
-    rxnRate = np.array(rxnRate)
-    rxnRate1 = np.array(rxnRate1)
+    # rxnRate = np.array(rxnRate)
+    # rxnRate1 = np.array(rxnRate1)
     rxnRate2 = np.array(rxnRate2)
     rxnRate3 = np.array(rxnRate3)
     rxnRate4 = np.array(rxnRate4)
@@ -396,10 +419,10 @@ for ch in channels:
     rxnRate6 = np.array(rxnRate6)
     rxnRate7 = np.array(rxnRate7)
 
-    plt.scatter(temperature,rxnRate,c='b')
-    plt.plot(temperature,rxnRate,label='romberg',color='b')
-    plt.scatter(temperature,rxnRate1,c='g')
-    plt.plot(temperature,rxnRate1,label='quad',color='g')
+    # plt.scatter(temperature,rxnRate,c='b')
+    # plt.plot(temperature,rxnRate,label='romberg',color='b')
+    # plt.scatter(temperature,rxnRate1,c='g')
+    # plt.plot(temperature,rxnRate1,label='quad',color='g')
     plt.scatter(temperature,rxnRate2,c='r')
     plt.plot(temperature,rxnRate2,label='Sum',color='r')
     plt.scatter(temperature,rxnRate3,c='y')
@@ -421,8 +444,8 @@ for ch in channels:
     plt.savefig('%s_ReactionRate.png'%ch,dpi=900)
     plt.clf()
     df = pd.DataFrame(data=temperature,index=temperature,columns=['T9'])
-    df = df.assign(Rate=pd.Series(rxnRate2,index=df.index).values)
-    df.to_excel('legendre_out/DATA/analytically/%s/a%d/%s_rates.xlsx'%(ch,legendre_order[0][-1],ch))
+    df = df.assign(Rate=pd.Series(rxnRate6,index=df.index).values) # np.trapz
+    df.to_excel('legendre_out/DATA/%s/a%d/%s_rates.xlsx'%(ch,legendre_order[0][-1],ch))
 
     print('\n\n')
 # """

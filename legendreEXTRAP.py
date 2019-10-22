@@ -369,6 +369,12 @@ for ch in channels:
 
 
 
+        rxnrateCONST = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)*(_u)**-.5
+        test = 3.7313E10
+
+        print(rxnrateCONST)
+        print test)
+
         rate =  1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg
         rate1 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg1[0]
         rate2 = 1E-24*6.022E23*3E10*(8/np.pi)**.5*(8.617**-1.5)* mu**(-.5) * T**(-1.5) * intg2

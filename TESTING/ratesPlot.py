@@ -8,13 +8,15 @@ rcParams.update({'figure.autolayout': True})
 plt.rcParams['xtick.labelsize']=12
 plt.rcParams['ytick.labelsize']=12
 
+
+# Currently not being used but can be implemented, only need to get the coefficients
 def rateFcn(a0,a1,a2,a3,a4,a5,a6,T):
     """ Take JINA REACLIB coefficients and calculate a reaction rate """
     return np.exp(a0+a1/T+a2/T**(1/3)+a3*T**(1/3)+a4*T+a5*T**(5/3)+a6*np.log(T))
 
 
 
-# """
+
 col = ["T9","Rate"]
 
 sheetNames = ['nacr','il01','rath','laur','ths8','il10']
@@ -33,14 +35,12 @@ for ind,names in enumerate(sheetNames):
 
     plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
     plt.xlabel('Temperature (T9)',fontsize=14)
-    # plt.legend()
     plt.tight_layout()
 
-# plt.show()
-# exit()
-myp0rates = pd.read_excel('legendre_out/DATA/analytically/p0/a0/p0_rates.xlsx',sheet_name='Sheet1',header=0)
-myp1rates = pd.read_excel('legendre_out/DATA/analytically/p1/a0/p1_rates.xlsx',sheet_name='Sheet1',header=0)
-myp2rates = pd.read_excel('legendre_out/DATA/analytically/p2/a0/p2_rates.xlsx',sheet_name='Sheet1',header=0)
+
+myp0rates = pd.read_excel('legendre_out/DATA/p0/a0/p0_rates.xlsx',sheet_name='Sheet1',header=0)
+myp1rates = pd.read_excel('legendre_out/DATA/p1/a0/p1_rates.xlsx',sheet_name='Sheet1',header=0)
+myp2rates = pd.read_excel('legendre_out/DATA/p2/a0/p2_rates.xlsx',sheet_name='Sheet1',header=0)
 
 azp0rates = pd.read_table('p0rates.out',sep='\s+')
 azp1rates = pd.read_table('p1rates.out',sep='\s+')
@@ -100,10 +100,10 @@ plt.xscale('log') #
 plt.xlim(1e-1,1e1)
 plt.savefig('p0CompareReactionRates.png',dpi=300)
 # plt.show()
-exit()
+# exit()
 
 plt.clf()
-# Plot the rate ratios
+# Plot the rate ratios wrt my p0
 y = (rate1+rate2)/rate0
 plt.plot(temp0,y)
 
@@ -114,4 +114,4 @@ plt.ylabel('Ratio of Reaction Rate',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.tight_layout()
 plt.savefig('RatioReactionRates.png',dpi=300)
-plt.show()
+# plt.show()

@@ -248,8 +248,6 @@ for ch in channels:
     for _ in range(0,leg_ord+1):
         # stuff = dict_ord[str(legendre_order[_][-1])]
         # df = pd.DataFrame(data=stuff,index=energyList,columns=colLabels[0:_*2+1])
-        # df.to_csv('legendre_out/DATA/numerically/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
-        # df.to_excel('legendre_out/DATA/numerically/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
 
         stuff = dict_ord_a[str(legendre_order[_][-1])]
         stuff2 = dict_ord_err_a[str(legendre_order[_][-1])]
