@@ -35,7 +35,13 @@ _m1H = GetElement(1,1)[3]
 _m4He = GetElement(2,4)[3]
 _m24Mg = GetElement(12,24)[3]
 _m27Al = GetElement(13,27)[3]
+_barnsTocm2 = 1E-24         # cm2
+_c = 2.99792458E10          # cm / s
+_u = 931.494/_c**2          # MeV / c^2
+_NA = 6.02214E23            # particles / mol
 
+
+rxnRateCONST = _barnsTocm2 * _NA * (8/(np.pi*_u))**.5 * (8.617E-2)**-1.5
 
 
 def convert(old):
