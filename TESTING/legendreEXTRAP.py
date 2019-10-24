@@ -279,10 +279,10 @@ for ch in channels:
         df = df.assign(Pval=pd.Series(dict_ord_pVal_a[str(legendre_order[_][-1])],index=df.index).values)
         df = df.assign(Chi2NDF=pd.Series(dict_ord_x2ndf_a[str(legendre_order[_][-1])],index=df.index).values)
 
-        csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/a%dFitEXTRAP.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
         df.to_csv(csvPath)
 
-        excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/a%dFitEXTRAP.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
         df.to_excel(excelPath)
 
 
@@ -339,10 +339,10 @@ for ch in channels:
     df = df.assign(splineX=pd.Series(energyList,index=df.index).values)
     df = df.assign(splineY=pd.Series(y_val1,index=df.index).values)
 
-    csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/%sFitPoints.csv' % (ch,ch))
+    csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/%sFitPointsEXTRAP.csv' % (ch,ch))
     df.to_csv(csvPath)
 
-    excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/%sFitPoints.xlsx' % (ch,ch))
+    excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/%sFitPointsEXTRAP.xlsx' % (ch,ch))
     df.to_excel(excelPath)
 
 
@@ -443,20 +443,21 @@ for ch in channels:
     plt.legend()
     plt.yscale('log')
     plt.xlim(0,10)
-    plt.ylim(1e-30,1e8)
+    # plt.ylim(1e-30,1e8)
+    plt.ylim(1e-20,1e8)
     plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
     plt.xlabel('Temperature (T9)',fontsize=14)
     plt.grid(b=True, which='both', axis='both')
-    savePath = os.path.join(desiredDir,'%s_ReactionRate.png'%ch)
+    savePath = os.path.join(desiredDir,'%s_ReactionRateEXTRAP.png'%ch)
     plt.savefig(savePath,dpi=900)
     plt.clf()
     df = pd.DataFrame(data=temperature,index=temperature,columns=['T9'])
     df = df.assign(Rate=pd.Series(rxnRate7,index=df.index).values) # np.trapz
 
-    csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/%s_rates.csv'%(ch,legendre_order[0][-1],ch))
+    csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/%s_ratesEXTRAP.csv'%(ch,legendre_order[0][-1],ch))
     df.to_csv(csvPath)
 
-    excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/%s_rates.xlsx'%(ch,legendre_order[0][-1],ch))
+    excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/%s_ratesEXTRAP.xlsx'%(ch,legendre_order[0][-1],ch))
     df.to_excel(excelPath)
 
     print('\n\n')

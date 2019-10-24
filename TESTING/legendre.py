@@ -379,15 +379,15 @@ for ch in channels:
         # intg = integrand1.integrate(min(E1),max(E1))
         # intg += integrand2.integrate(min(E2),max(E2))
 
-        # intg = integrate.simps(integrand[e_knots_mask1],E1)
-        # intg += integrate.simps(integrand[e_knots_mask2],E2)
+        intg = integrate.simps(integrand[e_knots_mask1],E1)
+        intg += integrate.simps(integrand[e_knots_mask2],E2)
 
-        intg = integrate.trapz(integrand[e_knots_mask1],E1)
-        intg += integrate.trapz(integrand[e_knots_mask2],E2)
+        # intg = integrate.trapz(integrand[e_knots_mask1],E1)
+        # intg += integrate.trapz(integrand[e_knots_mask2],E2)
 
         # intg = integrate.quad(integrand1,min(E1),max(E1),limit=200)
         # intg += integrate.quad(integrand2,min(E2),max(E2),limit=200)
-
+        #
         # rate =  rxnRateCONST * mu**(-.5) * T**(-1.5) * intg[0]
 
         # rate =  3.7313E10 * mu**(-.5) * T**(-1.5) * intg
@@ -405,7 +405,7 @@ for ch in channels:
     plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
     plt.xlabel('Temperature (T9)',fontsize=14)
     plt.title('%s - Reaction Rate'%ch,fontsize=20)
-    plt.savefig('%s_DataReactionRate_trapz.png'%ch,dpi=300)
+    plt.savefig('%s_DataReactionRate_simps.png'%ch,dpi=300)
     plt.clf()
     df = pd.DataFrame(data=temperature,index=temperature,columns=['T9'])
     df = df.assign(Rate=pd.Series(rxnRate,index=df.index).values)

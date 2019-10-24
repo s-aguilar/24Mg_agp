@@ -41,12 +41,12 @@ def rateFcn(a0,a1,a2,a3,a4,a5,a6,T):
 col = ["T9","Rate"]
 sheetNames = ['nacr','il01','rath','laur','ths8','il10']
 colors = ['b','g','r','c','m','y']
-for ind,names in enumerate(sheetNames):
-    pathToREACLIB = os.path.join(desiredDir,'24MgREACLIB.xlsx')  # This changes
-    df = pd.read_excel(pathToREACLIB,sheet_name='%s'%names,header=0)
-    _temp = df['T9'].values
-    _rate = df['Rate'].values
-    plt.plot(_temp,_rate,color=colors[ind],label=names)
+# for ind,names in enumerate(sheetNames):
+#     pathToREACLIB = os.path.join(desiredDir,'24MgREACLIB.xlsx')  # This changes
+#     df = pd.read_excel(pathToREACLIB,sheet_name='%s'%names,header=0)
+#     _temp = df['T9'].values
+#     _rate = df['Rate'].values
+#     plt.plot(_temp,_rate,color=colors[ind],label=names)
 
 p1Path = os.path.join(desiredDir,'legendre_out/DATA/p1/a0/p1_rates.xlsx')
 myp1rates = pd.read_excel(p1Path,sheet_name='Sheet1',header=0)
@@ -79,30 +79,31 @@ azrate1 = azp1rates['Rate'].values
 azrate2 = azp2rates['Rate'].values
 
 plt.scatter(temp1,rate1,c='r')
-plt.plot(temp1,rate1,color='r',label='p$_{1}$')
+plt.plot(temp1,rate1,color='r',label='$\\gamma$p$_{1}$')
 
-plt.scatter(temp2,rate2,c='b')
-plt.plot(temp2,rate2,color='b',label='$\\gamma$p$_2$')
+plt.scatter(temp2,rate2,c='g')
+plt.plot(temp2,rate2,color='g',label='$\\gamma$p$_2$')
 
-plt.scatter(aztemp0,azrate0,c='g')
-plt.plot(aztemp0,azrate0,color='g',label='azure rate p0')
+plt.scatter(aztemp0,azrate0,c='b')
+plt.plot(aztemp0,azrate0,color='b',label='azure rate p0')
 
 plt.scatter(aztemp1,azrate1,c='fuchsia')
 plt.plot(aztemp1,azrate1,color='fuchsia',label='azure rate p1')
 
-plt.scatter(aztemp2,azrate2,c='b')
-plt.plot(aztemp2,azrate2,color='b',label='azure rate p2')
+plt.scatter(aztemp2,azrate2,c='k')
+plt.plot(aztemp2,azrate2,color='k',label='azure rate p2')
 
 
 plt.yscale('log')
-plt.ylim(1e-38,1e8) # 1e-18
-plt.xscale('log')
-plt.xlim(1e-1,1e1)
+plt.ylim(1e-20,1e8) # 1e-18
+# plt.xscale('log')
+# plt.xlim(1e-1,1e1)
+plt.xlim(0,1e1)
 plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('Reaction Rates',fontsize=20)
 plt.legend()
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 savePath = os.path.join(desiredDir,'DataCompareReactionRates.png')
 plt.savefig(savePath,dpi=300)
 # plt.show()
@@ -116,14 +117,15 @@ plt.plot(temp1,rate1,color='k',label='me')
 plt.plot(aztemp1,azrate1,color='b',label='azure rate p1')
 
 plt.yscale('log')
-plt.ylim(1e-18,1e8) # 1e-18
-plt.xscale('log')
-plt.xlim(1e-1,1e1)
+plt.ylim(1e-20,1e8) # 1e-18
+# plt.xscale('log')
+# plt.xlim(1e-1,1e1)
+plt.xlim(0,1e1)
 plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{1}$ Reaction Rates',fontsize=20)
 plt.legend()
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 savePath = os.path.join(desiredDir,'p1DataCompareReactionRatesAzure.png')
 plt.savefig(savePath,dpi=300)
 
@@ -135,14 +137,15 @@ plt.plot(temp2,rate2,color='k',label='me')
 plt.plot(aztemp2,azrate2,color='b',label='azure rate p2')
 
 plt.yscale('log')
-plt.ylim(1e-18,1e8) # 1e-18
-plt.xscale('log')
-plt.xlim(1e-1,1e1)
+plt.ylim(1e-20,1e8) # 1e-18
+# plt.xscale('log')
+# plt.xlim(1e-1,1e1)
+plt.xlim(0,1e1)
 plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{2}$ Reaction Rates',fontsize=20)
 plt.legend()
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 savePath = os.path.join(desiredDir,'p2DataCompareReactionRatesAzure.png')
 plt.savefig(savePath,dpi=300)
 
@@ -175,6 +178,17 @@ for ind in range(len(_a0)):
 
 plt.scatter(_temp,_rate,c='k')
 plt.plot(_temp,_rate,c='k')
+# plt.ylim(1e-20,1e8) # 1e-18
+plt.yscale('log')
+plt.show()
+
+for ind in range(len(_a0)):
+    _rate_ = rateFcn(_a0[ind],_a1[ind],_a2[ind],_a3[ind],_a4[ind],_a5[ind],_a6[ind],temperature)
+    plt.plot(temperature,_rate_,c=colors[ind])
+
+plt.scatter(_temp,_rate,c='k')
+plt.plot(_temp,_rate,c='k')
+plt.ylim(1e-20,1e8) # 1e-18
 plt.yscale('log')
 plt.show()
 
@@ -192,7 +206,7 @@ plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
 eq = r'$\frac{Rate~p_{1}~+~Rate~p_{2}}{Rate~p_{0}}$'
 plt.text(9, 1e-3, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 
 savePath = os.path.join(desiredDir,'DataRatioReactionRates.png')
 plt.savefig(savePath,dpi=300)

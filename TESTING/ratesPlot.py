@@ -48,13 +48,13 @@ for ind,names in enumerate(sheetNames):
     _rate = df['Rate'].values
     plt.plot(_temp,_rate,color=colors[ind],label=names)
 
-p0Path = os.path.join(desiredDir,'legendre_out/DATA/p0/a0/p0_rates.xlsx')
+p0Path = os.path.join(desiredDir,'legendre_out/DATA/p0/a0/p0_ratesEXTRAP.xlsx')
 myp0rates = pd.read_excel(p0Path,sheet_name='Sheet1',header=0)
 
-p1Path = os.path.join(desiredDir,'legendre_out/DATA/p1/a0/p1_rates.xlsx')
+p1Path = os.path.join(desiredDir,'legendre_out/DATA/p1/a0/p1_ratesEXTRAP.xlsx')
 myp1rates = pd.read_excel(p1Path,sheet_name='Sheet1',header=0)
 
-p2Path = os.path.join(desiredDir,'legendre_out/DATA/p2/a0/p2_rates.xlsx')
+p2Path = os.path.join(desiredDir,'legendre_out/DATA/p2/a0/p2_ratesEXTRAP.xlsx')
 myp2rates = pd.read_excel(p2Path,sheet_name='Sheet1',header=0)
 
 azp0Path = os.path.join(desiredDir,'p0rates.out')
@@ -102,9 +102,10 @@ plt.plot(temp0,rate0,color='k',label='me')
 
 
 plt.yscale('log')
-plt.ylim(1e-38,1e8) # 1e-18
-plt.xscale('log')
-plt.xlim(1e-1,1e1)
+plt.ylim(1e-20,1e8) # 1e-18
+# plt.xscale('log')
+# plt.xlim(1e-1,1e1)
+plt.xlim(0,1e1)
 plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{0}$ Reaction Rates',fontsize=20)
@@ -122,14 +123,15 @@ plt.plot(temp0,rate0,color='k',label='me')
 plt.plot(aztemp0,azrate0,color='b',label='azure rate p0')
 
 plt.yscale('log')
-plt.ylim(1e-18,1e8) # 1e-18
-plt.xscale('log')
-plt.xlim(1e-1,1e1)
+plt.ylim(1e-20,1e8) # 1e-18
+# plt.xscale('log')
+# plt.xlim(1e-1,1e1)
+plt.xlim(0,1e1)
 plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{0}$ Reaction Rates',fontsize=20)
 plt.legend()
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 savePath = os.path.join(desiredDir,'p0CompareReactionRatesAzure.png')
 plt.savefig(savePath,dpi=300)
 
@@ -141,14 +143,15 @@ plt.plot(temp1,rate1,color='k',label='me')
 plt.plot(aztemp1,azrate1,color='b',label='azure rate p1')
 
 plt.yscale('log')
-plt.ylim(1e-18,1e8) # 1e-18
-plt.xscale('log')
-plt.xlim(1e-1,1e1)
+plt.ylim(1e-20,1e8) # 1e-18
+# plt.xscale('log')
+# plt.xlim(1e-1,1e1)
+plt.xlim(0,1e1)
 plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{1}$ Reaction Rates',fontsize=20)
 plt.legend()
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 savePath = os.path.join(desiredDir,'p1CompareReactionRatesAzure.png')
 plt.savefig(savePath,dpi=300)
 
@@ -160,14 +163,15 @@ plt.plot(temp2,rate2,color='k',label='me')
 plt.plot(aztemp2,azrate2,color='b',label='azure rate p2')
 
 plt.yscale('log')
-plt.ylim(1e-18,1e8) # 1e-18
-plt.xscale('log')
-plt.xlim(1e-1,1e1)
+plt.ylim(1e-20,1e8) # 1e-18
+# plt.xscale('log')
+# plt.xlim(1e-1,1e1)
+plt.xlim(0,1e1)
 plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{2}$ Reaction Rates',fontsize=20)
 plt.legend()
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 savePath = os.path.join(desiredDir,'p2CompareReactionRatesAzure.png')
 plt.savefig(savePath,dpi=300)
 
@@ -186,7 +190,7 @@ plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
 eq = r'$\frac{Rate~p_{{0}_{AZURE2}}}{Rate~p_{0}}$'
 plt.text(9, 1, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 
 savePath = os.path.join(desiredDir,'RatioReactionRatesAzure.png')
 plt.savefig(savePath,dpi=300)
@@ -205,7 +209,7 @@ plt.xlabel('Temperature (T9)',fontsize=14)
 plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
 eq = r'$\frac{Rate~p_{1}~+~Rate~p_{2}}{Rate~p_{0}}$'
 plt.text(9, 1e-3, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
-plt.grid(b=True, which='both', axis='both')
+# plt.grid(b=True, which='both', axis='both')
 
 savePath = os.path.join(desiredDir,'RatioReactionRates.png')
 plt.savefig(savePath,dpi=300)
