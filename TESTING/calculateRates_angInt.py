@@ -178,9 +178,9 @@ for ch in channels:
 
     col = ["T9","Rate"]
 
-    myp0rates = pd.read_excel('legendre_out/DATA/p0/a0/p0_rates.xlsx',sheet_name='Sheet1',header=0)
-    myp1rates = pd.read_excel('legendre_out/DATA/p1/a0/p1_rates.xlsx',sheet_name='Sheet1',header=0)
-    myp2rates = pd.read_excel('legendre_out/DATA/p2/a0/p2_rates.xlsx',sheet_name='Sheet1',header=0)
+    myp0rates = pd.read_excel('legendre_out/DATA/p0/a0/p0_ratesEXTRAP.xlsx',sheet_name='Sheet1',header=0)
+    myp1rates = pd.read_excel('legendre_out/DATA/p1/a0/p1_ratesEXTRAP.xlsx',sheet_name='Sheet1',header=0)
+    myp2rates = pd.read_excel('legendre_out/DATA/p2/a0/p2_ratesEXTRAP.xlsx',sheet_name='Sheet1',header=0)
 
     azp0rates = pd.read_table('p0rates.out',sep='\s+')
     azp1rates = pd.read_table('p1rates.out',sep='\s+')
