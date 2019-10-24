@@ -311,9 +311,8 @@ for ch in channels:
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.
 
-    solidAngle = 4*np.pi
-    a0_final = solidAngle*np.array(a0_final)
-    a0_err_final = solidAngle*np.array(a0_err_final)
+    a0_final = np.array(a0_final)
+    a0_err_final = np.array(a0_err_final)
 
 
     spline1 = CubicSpline(energyList,a0_final)
@@ -368,6 +367,9 @@ for ch in channels:
 
     dE = .001   # 1 keV steps
     # dE = .0005 # half keV steps
+
+    solidAngle = 4*np.pi
+    a0_final = solidAngle*a0_final  # Now angle integrated cross-section
     for T in temperature:
 
         E1 = energyList

@@ -9,28 +9,44 @@ from chi2 import chi2_det,chi2_mat
 from scipy.interpolate import CubicSpline
 from scipy import special
 from scipy import constants
+from scipy import integrate
 
 from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
 
+plt.rcParams['xtick.labelsize']=12
+plt.rcParams['ytick.labelsize']=12
+
+# Use to switch directory paths to use (for the main or TESTING)
+import os
+currentDir = os.path.realpath('')
+parentDir = os.path.realpath('..')
+
+
+
+"""
+ALWAYS SET THIS PATH TO THE ONE YOU WANT TO USE!
+"""
+desiredDir = currentDir
+
+
+"""
+ALWAYS SET THIS PATH TO THE ONE YOU WANT TO USE!
+"""
+desiredDir = currentDir
 
 """
 Reads in the cross-section data produced by 'crossSectionExp.py' file and
 performs a fit using even terms in the legendre polynomial on the angular
 distributions.
 
-The 'plot_x' variable enables/disables the plots demonstrating the different
-order legendre polynomial fits for either 'a' analytic or 'n' numeric fit
+The 'plot_a' variable enables/disables the plots demonstrating the different
+order legendre polynomial fits 'a' analytic fit
 
-There is a 'stop' variable that can be turned off, it is used for
-debugging purposes.
 """
 
-plt.rcParams['xtick.labelsize']=12
-plt.rcParams['ytick.labelsize']=12
 
-
-# GetElement resturns (index,Z,A,Mass,'element')
+# GetElement returns (index,Z,A,Mass,'element')
 _m1H = GetElement(1,1)[3]
 _m4He = GetElement(2,4)[3]
 _m24Mg = GetElement(12,24)[3]
@@ -69,16 +85,14 @@ p1 = pd.read_table('rMatrix/rMatrix_p1s.dat',names=colNames)
 p2 = pd.read_table('rMatrix/rMatrix_p2s.dat',names=colNames)
 a1 = pd.read_table('rMatrix/rMatrix_a1s.dat',names=colNames)
 
-dict_channels = {'p1':p1,'p2':p2,'a1':a1}
+dict_channels = {'p1':p1,'p2':p2}#,'a1':a1}
 
 
 # If plot is 0 then no plotting, any other value it will generate the plots
-# 'n' for numerical solution plots, 'a' for analytic solution plots
-plot_n = 0
+# 'a' for analytic solution plots
 plot_a = 1
 
 
-# """
 # Perform the analysis over all the channels
 channels = ['p1','p2']#,'a1']
 for ch in channels:
@@ -88,7 +102,10 @@ for ch in channels:
 
     chan = dict_channels[ch]
 
-    energy_chan = chan['Energy'].values
+    # is in Lab energy, convert to center-of-mass
+    energyCM_chan = chan['Energy'].values*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
+    chan = chan.assign(E_CM=pd.Series(energyCM_chan,index=chan.index).values)
+    # print(chan.head())
     angle_chan = chan['Angle'].values
     cross_chan = chan['Cross-section'].values
     crossErr_chan = chan['Error'].values
@@ -96,19 +113,6 @@ for ch in channels:
 
     legendre_order = [[0],[0,2],[0,2,4],[0,2,4,6],[0,2,4,6,8],[0,2,4,6,8,10]]
     color_order = ['b','g','r','c','m','y']
-
-
-    # Lists for python minimization solutions
-    ord_0 = []
-    ord_2 = []
-    ord_4 = []
-    ord_6 = []
-    ord_8 = []
-    ord_10 = []
-
-
-    # Dict for python minimization solutions
-    dict_ord = {'0':ord_0,'2':ord_2,'4':ord_4,'6':ord_6,'8':ord_8,'10':ord_10}
 
 
     # Lists for analytic solutions
@@ -130,15 +134,19 @@ for ch in channels:
     # Passing list to a set does not preserve the original order (ascending) so
     # manually sort it back into a new list
     temp_nrg = set()
-    energyList = np.array([x for x in energy_chan if not (x in temp_nrg or temp_nrg.add(x))],dtype=np.float64)
+    energyList = np.array([x for x in energyCM_chan if not (x in temp_nrg or temp_nrg.add(x))],dtype=np.float64)
 
+    # print(energyList)
 
     # perform Legendre fit over the angular distribution at each energy
     for nrg in energyList:
-        is_nrg = chan['Energy']==nrg      # create boolean mask
+        # is_nrg = chan['Energy']==nrg      # create boolean mask for lab energies
+        # chan_temp = chan[is_nrg]
+        is_nrg = chan['E_CM']==nrg      # create boolean mask
         chan_temp = chan[is_nrg]
 
-        masked_nrg_chan = chan_temp['Energy'].values
+        # Energy is in center-of-mass
+        masked_nrg_chan = chan_temp['E_CM'].values
         masked_ang_chan = np.radians(chan_temp['Angle'].values)
         masked_cross_chan = chan_temp['Cross-section'].values
         masked_err_chan = chan_temp['Error'].values
@@ -158,33 +166,25 @@ for ch in channels:
         # Loop through the number of terms used in Legendre expansion:
         # -- a0, a0+a2, ... , a0+a2+a4+a6+a8+a10
         for ind in range(0,leg_ord+1):
-            coef,full = np.polynomial.legendre.legfit(np.cos(masked_ang_chan),masked_cross_chan,deg=legendre_order[ind],full=True,w=temp_weights)
-
-            # print('Results from cookbook python minimization:\n',coef)
-            # chi2_det(masked_cross_chan,masked_err_chan,ind)
+            # print(nrg)
+            # print(masked_cross_chan)
+            # print(masked_err_chan,'\\')
             results = chi2_mat(masked_cross_chan,masked_err_chan,ind)
 
-            # TURN ON/OFF if you want to debug values
-            # stop = input('...Pause...\n\n')
-
-
-            dict_ord[str(legendre_order[ind][-1])].append(coef)
             dict_ord_a[str(legendre_order[ind][-1])].append(results[0])
             dict_ord_err_a[str(legendre_order[ind][-1])].append(results[1])
             dict_ord_x2_a[str(legendre_order[ind][-1])].append(results[2])
             dict_ord_x2ndf_a[str(legendre_order[ind][-1])].append(results[3])
             dict_ord_pVal_a[str(legendre_order[ind][-1])].append(results[4])
 
-            if plot_n:
-                plt.scatter(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),coef),c=color_order[ind],s=8,label='%d'%legendre_order[ind][-1])
-
-            elif plot_a:
+            if plot_a:
                 # Note: The legendre.legval function requires the coefficients
                 # of all terms up to whatever order you want, must pad the even
-                # terms with 0's
+                # terms with 0's, this is done through the 'convert' function
                 temp_coef = convert(results[0])
                 temp_coef_err = convert(results[1])
 
+                # Recording points of some angular distributions
                 # # if nrg == 4.30930:
                 # if nrg < 4.962 and nrg > 4.96:
                 #     print(ch,legendre_order[ind],nrg)
@@ -195,19 +195,19 @@ for ch in channels:
 
                 # Scatter has bug when the y-values are small, the y-axis does not autoscale
                 # plt.scatter(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],s=8,label='%d'%legendre_order[ind][-1])
-                if ind ==2:
-                    plt.plot(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],label='%d$^{th}$ Order'%legendre_order[ind][-1])#: $\chi^{2}=%5.2f$'%(legendre_order[ind][-1],results[2]))
-
-        # Angular distribution plots
-        if plot_n or plot_a:
-            plt.errorbar(masked_ang_chan,masked_cross_chan,yerr=masked_err_chan,c='k',fmt='o')    # Original data points
-            plt.xticks(ticks=[0,np.pi/4,np.pi/2],labels=['0','$\pi/4$','$\pi/2$'])
-            plt.xlabel('Angle',fontsize=14)
-            plt.ylabel('Differential Cross-Section (barns/sr)', fontsize=14)
-            plt.title('$^{24}$Mg($\\alpha$,p$_{%s}\\gamma$) - %5.4f MeV' % (ch[-1],nrg),fontsize=20)
-            plt.legend(prop={'size': 14})
-            plt.savefig('legendre_out/fits/%s/%5.4fMeVFit.png'%(ch,nrg),dpi=300)
-            plt.clf()
+        #         if ind ==2:
+        #             plt.plot(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],label='%d$^{th}$ Order'%legendre_order[ind][-1])
+        #
+        # # Angular distribution plots
+        # if plot_a:
+        #     plt.errorbar(masked_ang_chan,masked_cross_chan,yerr=masked_err_chan,c='k',fmt='o')    # Original data points
+        #     plt.xticks(ticks=[0,np.pi/4,np.pi/2],labels=['0','$\pi/4$','$\pi/2$'])
+        #     plt.xlabel('Angle',fontsize=14)
+        #     plt.ylabel('Differential Cross-Section (barns/sr)', fontsize=14)
+        #     plt.title('$^{24}$Mg($\\alpha$,p$_{%s}\\gamma$) - %5.4f MeV' % (ch[-1],nrg),fontsize=20)
+        #     plt.legend(prop={'size': 14})
+        #     plt.savefig('legendre_out/fits/%s/%5.4fMeVFit.png'%(ch,nrg),dpi=300)
+        #     plt.clf()
 
 
     # Convert lists into arrays
@@ -248,13 +248,9 @@ for ch in channels:
 
     # Now organize into pandas dataframe and write it as both 'csv' and 'xlsx' format
     print('-Writing coefficients into .csv and .xlsx files')
-    # colLabels = ['a0','a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','chi2','p-value','chi2ndf']
     colLabels = ['a0','a2','a4','a6','a8','a10']
     colLabelss = ['a0_err','a2_err','a4_err','a6_err','a8_err','a10_err']
     for _ in range(0,leg_ord+1):
-        # stuff = dict_ord[str(legendre_order[_][-1])]
-        # df = pd.DataFrame(data=stuff,index=energyList,columns=colLabels[0:_*2+1])
-
         stuff = dict_ord_a[str(legendre_order[_][-1])]
         stuff2 = dict_ord_err_a[str(legendre_order[_][-1])]
         df = pd.DataFrame(data=stuff,index=energyList,columns=colLabels[0:_+1])
@@ -263,46 +259,30 @@ for ch in channels:
         df = df.assign(Chi2=pd.Series(dict_ord_x2_a[str(legendre_order[_][-1])],index=df.index).values)
         df = df.assign(Pval=pd.Series(dict_ord_pVal_a[str(legendre_order[_][-1])],index=df.index).values)
         df = df.assign(Chi2NDF=pd.Series(dict_ord_x2ndf_a[str(legendre_order[_][-1])],index=df.index).values)
-        df.to_csv('legendre_out/DATA/analytically/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
-        df.to_excel('legendre_out/DATA/analytically/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        df.to_csv('legendre_out/DATA/%s/a%d/a%dFit.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        df.to_excel('legendre_out/DATA/%s/a%d/a%dFit.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
 
 
     # Now I have all the 'a_i' coefficients for all the many order fits, need
     # to select/filter the necessary 'a0' terms from the fits. This will be
     # done through the p-value.
+    # Read in all my a0s and p-values and compare each energies fit side by side
+    # starting from lowest order to highest, select order which pvalue is maximal,
+    # append the a0 term + continue and repeat for the next energy step
+    # (NOT USED ANYMORE)
 
-    """
-    Read in all my a0s and p-values and compare each energies fit side by side
-    starting from lowest order to highest, select order which pvalue is maximal,
-    append the a0 term + continue and repeat for the next energy step
-    """
     a0_final = []
     a0_err_final = []
     p_final = []
     x2_final = []
     order = []
-    PVAL = 0.08
 
+    # Only keep the a0s from the 4th order legendre polynomial fit
     for ind in range(len(ord_00)):
-        tester_p = [ord_00_pVal[ind],ord_02_pVal[ind],ord_04_pVal[ind]]
-        tester_x2 = [ord_00_x2ndf[ind],ord_02_x2ndf[ind],ord_04_x2ndf[ind]]
-        index = tester_p.index(max(tester_p))
-        if tester_p[index] == 0:
-            print('Testing with chi2')
-            index = tester_x2.index(min(tester_x2))
-
-        """
-        ## 9/20/19 update, only get a0 term from the a4 fit to keep it all consistent
-        """
-        # a0_final.append(dict_ord_a[str(legendre_order[index][-1])][ind][0])
-        # a0_err_final.append(dict_ord_err_a[str(legendre_order[index][-1])][ind][0])
-        # p_final.append(dict_ord_pVal_a[str(legendre_order[index][-1])][ind])
-        # order.append(str(legendre_order[index][-1]))
         a0_final.append(dict_ord_a[str(legendre_order[2][-1])][ind][0])
         a0_err_final.append(dict_ord_err_a[str(legendre_order[2][-1])][ind][0])
         p_final.append(dict_ord_pVal_a[str(legendre_order[2][-1])][ind])
         order.append(str(legendre_order[2][-1]))
-
 
 
     # # Save the points
@@ -316,110 +296,121 @@ for ch in channels:
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.
 
+    a0_final = np.array(a0_final)
+    a0_err_final = np.array(a0_err_final)
+
     solidAngle = 4*np.pi
-    # temp_ord_00 = solidAngle*np.array([_[0] for _ in ord_00])
-    a0_final = solidAngle*np.array(a0_final)
-    a0_err_final = solidAngle*np.array(a0_err_final)
 
+    # THIS IS FOR LAB ENERGIES
+    # I want to spline from # <= 4.03514 and spline # > 4.26996 THIS IS FOR LAB ENERGY
+    # e_knots_mask1 = energyList <= 4.03514
+    # spline1_mask = energyList <= 4.03514
+    # e_knots_mask2 = energyList >= 4.26996
+    # spline2_mask = energyList >= 4.26996
 
-    # I want to spline from # <= 4.03514 and spline # > 4.26996
-    e_knots_mask1 = energyList <= 4.03514
-    spline1_mask = energyList <= 4.03514
-    spline1 = CubicSpline(energyList[spline1_mask],a0_final[spline1_mask])
+    # FOR CM ENERGIES
+    e_knots_mask1 = energyList <= 3.459
+    spline1_mask = energyList <= 3.459
+    e_knots_mask2 = energyList >= 3.659
+    spline2_mask = energyList >= 3.659
+    spline1 = CubicSpline(energyList[spline1_mask],a0_final[spline1_mask]*solidAngle)
     y_val1 = spline1(energyList[e_knots_mask1])
 
 
-    e_knots_mask2 = energyList >= 4.26996
-    spline2_mask = energyList >= 4.26996
-    spline2 = CubicSpline(energyList[spline2_mask],a0_final[spline2_mask])
+
+    spline2 = CubicSpline(energyList[spline2_mask],a0_final[spline2_mask]*solidAngle)
     y_val2 = spline2(energyList[e_knots_mask2])
 
 
-    # Plot the splines and the points
-    plt.clf()
-    plt.plot(energyList[e_knots_mask1],y_val1,c='b')
-    plt.plot(energyList[e_knots_mask2],y_val2,c='b')
-    plt.scatter(energyList,a0_final)
-    plt.yscale('log')
-    plt.title('%s channel - a0 vs E - Cross-section' % ch)
-    plt.ylabel('Cross-Section (barns)')
-    plt.xlabel('E$_\\alpha$ (MeV)')
-    plt.savefig('legendre_out/excitationCurve/analytically/%s/%s_a0Curve.png' % (ch,ch),dpi=100)
-    plt.clf()
+    # # Plot the splines and the points
+    # plt.clf()
+    # plt.plot(energyList[e_knots_mask1],y_val1,c='b')
+    # plt.plot(energyList[e_knots_mask2],y_val2,c='b')
+    # plt.scatter(energyList,a0_final*solidAngle)
+    # plt.xlabel('E$_{CM}$ (MeV)',fontsize=14)
+    # plt.ylabel('Angle Integrated Cross-Section (barns)', fontsize=14)
+    # plt.yscale('log')
+    # plt.title('%s channel - a0*4$\pi$ vs E - Excitation Curve' % ch)
+    # plt.savefig('legendre_out/excitationCurve/%s/%s_a0Curve.png' % (ch,ch),dpi=300)
+    # plt.clf()
     # plt.show()
-
+    #
+    # print(len(energyList[spline1_mask]))
+    # print(len(energyList[spline2_mask]))
 
     # Save the points, first merge the two splines
     yvals = np.ma.concatenate([y_val1,y_val2])
     xvals = np.ma.concatenate([energyList[e_knots_mask1],energyList[e_knots_mask2]])
+    # print(len(y_val1),len(y_val2))
+    # print(len(yvals),len(xvals))
     df = pd.DataFrame(data=a0_final,index=energyList,columns=['a0'])
     df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).values)
     # df = df.assign(Pval=pd.Series(p_final,index=df.index).values)
     df = df.assign(fitOrder=pd.Series(order,index=df.index).values)
     df = df.assign(splineX=pd.Series(xvals,index=df.index).values)
     df = df.assign(splineY=pd.Series(yvals,index=df.index).values)
-    df.to_excel('legendre_out/DATA/analytically/%s/%sFitPoints.xlsx'%(ch,ch))
+    df.to_excel('legendre_out/DATA/%s/%sFitPoints.xlsx'%(ch,ch))
 
 
-    #### Note: Integrating both splines and adding
-    # totalCross0 = spline.integrate(min(e_knots[e_knots_mask1]),max(e_knots[e_knots_mask1]))
-    # totalCross0 += spline.integrate(min(e_knots[e_knots_mask2]),max(e_knots[e_knots_mask2]))
-    # totalCross1 = integrate.quad(spline1,min(e_knots[e_knots_mask1]),max(e_knots[e_knots_mask1]))
-    # totalCross1 += integrate.quad(spline2,min(e_knots[e_knots_mask2]),max(e_knots[e_knots_mask2]))
-    totalCross2 = integrate.romberg(spline1,min(energyList[e_knots_mask1]),max(energyList[e_knots_mask1]),divmax=20)
-    totalCross2 += integrate.romberg(spline2,min(energyList[e_knots_mask2]),max(energyList[e_knots_mask2]),divmax=20)
-
-    # totalCross0 = totalCross0
-    # totalCross1 = totalCross1[2]
-    # totalCross2 = totalCross2
-
-    print("The absolute cross section is:")
-    # print(totalCross0)
-    # print(totalCross1)
-    print(totalCross2,"Barns")
-
-
-
-    # Calculate the reaction rates
+    # Calculate the reaction rates and write them as both 'csv' and 'xlsx' format
+    print('-Calculating and writing reaction rates into .csv and .xlsx files')
     fname = 'rate_Temps.dat'
     temperature = np.loadtxt( fname )
 
-    mu = _m24Mg*_m4He/(_m27Al+_m1H)
-
-    if ch == 'a1':
-        mu = _m24Mg*_m4He/(_m24Mg+_m4He) # reduced mass
-
+    # reduced mass
+    mu = _m24Mg*_m4He/(_m24Mg+_m4He)
 
     rxnRate = []
     for T in temperature:
 
-        E1 = energyList[spline1_mask]
-        integrand1 = CubicSpline(E1,a0_final[spline1_mask]*np.exp(-11.604*E1/T)*E1)
+        E = energyList
+        integrand = (a0_final*solidAngle) * E * np.exp(-11.604*E/T)
 
-        E2 = energyList[spline2_mask]
-        integrand2 = CubicSpline(E2,a0_final[spline2_mask]*np.exp(-11.604*E2/T)*E2)
+        # Combine integral of both splines
+        E1 = energyList[e_knots_mask1]
+        integrand1 = CubicSpline(E1,integrand[e_knots_mask1])
 
-        intg = integrate.romberg(integrand1,min(energyList[e_knots_mask1]),max(energyList[e_knots_mask1]),divmax=20)
-        intg += integrate.romberg(integrand2,min(energyList[e_knots_mask2]),max(energyList[e_knots_mask2]),divmax=20)
+        E2 = energyList[e_knots_mask2]
+        integrand2 = CubicSpline(E2,integrand[e_knots_mask2])
 
-        rate =  3.7313E10* mu**(-.5) * T**(-1.5) * intg
+        # intg = integrate.romberg(integrand1,min(E1),max(E1),divmax=50)
+        # intg += integrate.romberg(integrand2,min(E2),max(E2),divmax=50)
+
+        # intg = integrand1.integrate(min(E1),max(E1))
+        # intg += integrand2.integrate(min(E2),max(E2))
+
+        # intg = integrate.simps(integrand[e_knots_mask1],E1)
+        # intg += integrate.simps(integrand[e_knots_mask2],E2)
+
+        intg = integrate.trapz(integrand[e_knots_mask1],E1)
+        intg += integrate.trapz(integrand[e_knots_mask2],E2)
+
+        # intg = integrate.quad(integrand1,min(E1),max(E1),limit=200)
+        # intg += integrate.quad(integrand2,min(E2),max(E2),limit=200)
+
+        # rate =  rxnRateCONST * mu**(-.5) * T**(-1.5) * intg[0]
+
+        # rate =  3.7313E10 * mu**(-.5) * T**(-1.5) * intg
+        rate =  rxnRateCONST * mu**(-.5) * T**(-1.5) * intg
         rxnRate.append(rate)
 
     rxnRate = np.array(rxnRate)
-    plt.scatter(temperature,rxnRate)
+    # plt.scatter(temperature,rxnRate)
     plt.plot(temperature,rxnRate)
     plt.yscale('log')
     plt.xlim(0,10)
-    plt.ylim(1e-30,1e5)
-    plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)')
-    plt.xlabel('Temperature (T9)')
-    plt.savefig('%s_ReactionRate.png'%ch)
+    # plt.ylim(1e-30,1e8)
+    # plt.ylim(1e-20,1e10)
+    plt.ylim(1e-20,1e8)
+    plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
+    plt.xlabel('Temperature (T9)',fontsize=14)
+    plt.title('%s - Reaction Rate'%ch,fontsize=20)
+    plt.savefig('%s_DataReactionRate_trapz.png'%ch,dpi=300)
     plt.clf()
     df = pd.DataFrame(data=temperature,index=temperature,columns=['T9'])
     df = df.assign(Rate=pd.Series(rxnRate,index=df.index).values)
-    df.to_excel('legendre_out/DATA/analytically/%s/a%d/%s_rates.xlsx'%(ch,legendre_order[0][-1],ch))
-
-
+    df.to_csv('legendre_out/DATA/%s/a%d/%s_rates.csv'%(ch,legendre_order[0][-1],ch))
+    df.to_excel('legendre_out/DATA/%s/a%d/%s_rates.xlsx'%(ch,legendre_order[0][-1],ch))
 
 
     # continue
