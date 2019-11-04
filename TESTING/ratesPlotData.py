@@ -156,8 +156,8 @@ plt.clf()
 
 pathToREACLIB = os.path.join(desiredDir,'24MgREACLIB.xlsx')
 df = pd.read_excel(pathToREACLIB,sheet_name='il10',header=0)
-_temp = df['T9'].values
-_rate = df['Rate'].values
+_tempIliadis = df['T9'].values
+_rateIliadis = df['Rate'].values
 
 df = pd.read_excel(pathToREACLIB,sheet_name='il10_coef',header=0)
 _a0 = df['a0'].values
@@ -176,38 +176,121 @@ for ind in range(len(_a0)):
     _rate_ = rateFcn(_a0[ind],_a1[ind],_a2[ind],_a3[ind],_a4[ind],_a5[ind],_a6[ind],temperature)
     plt.plot(temperature,_rate_,c=colors[ind])
 
-plt.scatter(_temp,_rate,c='k')
-plt.plot(_temp,_rate,c='k')
+# plt.scatter(_temp,_rate,c='k')
+plt.plot(_tempIliadis,_rateIliadis,c='k',label='Iliadis Points')
 # plt.ylim(1e-20,1e8) # 1e-18
 plt.yscale('log')
-plt.show()
+plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
+plt.xlabel('Temperature (T9)',fontsize=14)
+plt.legend()
+savePath = os.path.join(desiredDir,'DataRatioIliadis.png')
+plt.savefig(savePath,dpi=300)
+# plt.show()
+
+plt.clf()
 
 for ind in range(len(_a0)):
     _rate_ = rateFcn(_a0[ind],_a1[ind],_a2[ind],_a3[ind],_a4[ind],_a5[ind],_a6[ind],temperature)
     plt.plot(temperature,_rate_,c=colors[ind])
 
-plt.scatter(_temp,_rate,c='k')
-plt.plot(_temp,_rate,c='k')
+# plt.scatter(_temp,_rate,c='k')
+plt.plot(_tempIliadis,_rateIliadis,c='k',label='Iliadis Points')
 plt.ylim(1e-20,1e8) # 1e-18
 plt.yscale('log')
-plt.show()
+plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
+plt.xlabel('Temperature (T9)',fontsize=14)
+plt.legend()
+savePath = os.path.join(desiredDir,'DataRatioIliadis1.png')
+plt.savefig(savePath,dpi=300)
+# plt.show()
+
+plt.clf()
+# exit()
 
 
-exit()
-
-print(len(rate1),len(rate2),len(_rate))
-y = (rate1+rate2)/_rate
-plt.plot(temp0,y,color='k')
+ratiop1 = (rate1)/_rateIliadis
+plt.plot(_tempIliadis,ratiop1,color='k')
 plt.yscale('log')
 plt.xlim(0,10)
 plt.ylim(1e-5,1e0)
 plt.ylabel('Ratio of Reaction Rate',fontsize=14)
 plt.xlabel('Temperature (T9)',fontsize=14)
-plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
-eq = r'$\frac{Rate~p_{1}~+~Rate~p_{2}}{Rate~p_{0}}$'
+# plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
+eq = r'$\frac{ Rate~p_{1_{Data}} }{ Rate~p_{0_{Iliadis}} }$'
 plt.text(9, 1e-3, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
 # plt.grid(b=True, which='both', axis='both')
 
-savePath = os.path.join(desiredDir,'DataRatioReactionRates.png')
+savePath = os.path.join(desiredDir,'DataRatiop1ReactionRates.png')
 plt.savefig(savePath,dpi=300)
-# plt.show()
+
+df = pd.DataFrame(data=_tempIliadis,columns=['T9'])
+df = df.assign(Ratio=pd.Series(ratiop1,index=df.index).values)
+csvPath = os.path.join(desiredDir,'iliadisRatiop1.csv')
+df.to_csv(csvPath)
+excelPath = os.path.join(desiredDir,'iliadisRatiop1.xlsx')
+df.to_excel(excelPath)
+
+plt.clf()
+
+
+ratiop2 = (rate2)/_rateIliadis
+plt.plot(_tempIliadis,ratiop2,color='k')
+plt.yscale('log')
+plt.xlim(0,10)
+plt.ylim(1e-5,1e0)
+plt.ylabel('Ratio of Reaction Rate',fontsize=14)
+plt.xlabel('Temperature (T9)',fontsize=14)
+# plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
+eq = r'$\frac{ Rate~p_{2_{Data}} }{ Rate~p_{0_{Iliadis}} }$'
+plt.text(9, 1e-3, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
+# plt.grid(b=True, which='both', axis='both')
+
+savePath = os.path.join(desiredDir,'DataRatiop2ReactionRates.png')
+plt.savefig(savePath,dpi=300)
+
+df = pd.DataFrame(data=_tempIliadis,columns=['T9'])
+df = df.assign(Ratio=pd.Series(ratiop2,index=df.index).values)
+csvPath = os.path.join(desiredDir,'iliadisRatiop2.csv')
+df.to_csv(csvPath)
+excelPath = os.path.join(desiredDir,'iliadisRatiop2.xlsx')
+df.to_excel(excelPath)
+
+plt.clf()
+
+
+ratiosum = (rate1+rate2)/_rateIliadis
+plt.plot(_tempIliadis,ratiosum,color='k')
+plt.yscale('log')
+plt.xlim(0,10)
+plt.ylim(1e-5,1e0)
+plt.ylabel('Ratio of Reaction Rate',fontsize=14)
+plt.xlabel('Temperature (T9)',fontsize=14)
+# plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
+eq = r'$\frac{ Rate~p_{1_{Data}}~+~Rate~p_{2_{Data}} }{ Rate~p_{0_{Iliadis}} }$'
+plt.text(9, 1e-3, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
+# plt.grid(b=True, which='both', axis='both')
+
+savePath = os.path.join(desiredDir,'DataRatioSumReactionRates.png')
+plt.savefig(savePath,dpi=300)
+
+df = pd.DataFrame(data=_tempIliadis,columns=['T9'])
+df = df.assign(Ratio=pd.Series(ratiosum,index=df.index).values)
+csvPath = os.path.join(desiredDir,'iliadisRatioSum.csv')
+df.to_csv(csvPath)
+excelPath = os.path.join(desiredDir,'iliadisRatioSum.xlsx')
+df.to_excel(excelPath)
+
+plt.clf()
+
+
+plt.plot(_tempIliadis,ratiosum,color='k',label='Sum')
+plt.plot(_tempIliadis,ratiop1,color='r',label='p1')
+plt.plot(_tempIliadis,ratiop2,color='g',label='p2')
+plt.yscale('log')
+plt.xlim(0,10)
+plt.ylim(1e-5,1e0)
+plt.ylabel('Ratios of Reaction Rate',fontsize=14)
+plt.xlabel('Temperature (T9)',fontsize=14)
+plt.legend()
+savePath = os.path.join(desiredDir,'DataRatioSumReactionRates.png')
+plt.savefig(savePath,dpi=300)

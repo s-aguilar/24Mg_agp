@@ -66,7 +66,7 @@ temperature = np.loadtxt( fname )
 mu = _m24Mg*_m4He/(_m24Mg+_m4He)
 
 dict_channels = {'p0':dfp0,'p1':dfp1,'p2':dfp2}
-channels = ['p0']#,'p1','p2']
+channels = ['p0','p1','p2']
 for ch in channels:
 
     plt.clf()
@@ -110,48 +110,48 @@ for ch in channels:
         #     plt.savefig(plotPath,dpi=300)
         #     plt.clf()
 
-            # Just plot this once
-            if ch == 'p0':
-                # Plot the Maxwell-Boltzmann Curve
-                plt.clf()
-                EE = np.linspace(0,5,10000)
-                mB = EE*np.exp(-11.604*EE/T)
-                plt.plot(EE,mB,c='b',label='MB')
-                # plt.scatter(E,mB,c='b')
-                plt.xlabel('E_CM (MeV)',fontsize=14)
-                plt.ylabel('Maxwell-Boltzmann Term', fontsize=14)
-                plt.yscale('log')
-                plt.title('MB Term at %f GK vs E$_{cm}$'%T,fontsize=20)
-                plotPath = os.path.join(desiredDir,'mBplots/MB_at_%fGK.png'%T)
-                plt.savefig(plotPath,dpi=300)
-
-
-                plt.clf()
-                plt.plot(E,integrand,c='g',label='integrand')
-                # plt.scatter(E,mB,c='b')
-                plt.xlabel('E_CM (MeV)',fontsize=14)
-                plt.ylabel('Integrand Term', fontsize=14)
-                plt.yscale('linear')
-                plt.title('Integrand Term at %f GK vs E$_{cm}$'%T,fontsize=20)
-                plotPath = os.path.join(desiredDir,'integrandPlots/Integrand_at_%fGK.png'%T)
-                plt.savefig(plotPath,dpi=300)
-
-                plt.clf()
-                plt.plot(E,cross,c='k',label='Cross')
-                # plt.scatter(E,cross,c='b')
-                plt.xlabel('E_CM (MeV)',fontsize=14)
-                # plt.ylabel('Angle Integrated Cross-Section (barns)', fontsize=14)
-                plt.yscale('log')
-                plt.xlim(2.48,2.52)
-                plt.title('%s channel - Overlay at %fGK' % (ch,T),fontsize=20)
-                plt.legend()
-                plotPath = os.path.join(desiredDir,'blah/Overlay_at_%fGK.png'%T)
-                plt.savefig(plotPath,dpi=300)
-                plt.clf()
-
-
-                # plt.clf()
-                plt.clf()
+            # # Just plot this once
+            # if ch == 'p0':
+            #     # Plot the Maxwell-Boltzmann Curve
+            #     plt.clf()
+            #     EE = np.linspace(0,5,10000)
+            #     mB = EE*np.exp(-11.604*EE/T)
+            #     plt.plot(EE,mB,c='b',label='MB')
+            #     # plt.scatter(E,mB,c='b')
+            #     plt.xlabel('E_CM (MeV)',fontsize=14)
+            #     plt.ylabel('Maxwell-Boltzmann Term', fontsize=14)
+            #     plt.yscale('log')
+            #     plt.title('MB Term at %f GK vs E$_{cm}$'%T,fontsize=20)
+            #     plotPath = os.path.join(desiredDir,'mBplots/MB_at_%fGK.png'%T)
+            #     plt.savefig(plotPath,dpi=300)
+            #
+            #
+            #     plt.clf()
+            #     plt.plot(E,integrand,c='g',label='integrand')
+            #     # plt.scatter(E,mB,c='b')
+            #     plt.xlabel('E_CM (MeV)',fontsize=14)
+            #     plt.ylabel('Integrand Term', fontsize=14)
+            #     plt.yscale('linear')
+            #     plt.title('Integrand Term at %f GK vs E$_{cm}$'%T,fontsize=20)
+            #     plotPath = os.path.join(desiredDir,'integrandPlots/Integrand_at_%fGK.png'%T)
+            #     plt.savefig(plotPath,dpi=300)
+            #
+            #     plt.clf()
+            #     plt.plot(E,cross,c='k',label='Cross')
+            #     # plt.scatter(E,cross,c='b')
+            #     plt.xlabel('E_CM (MeV)',fontsize=14)
+            #     # plt.ylabel('Angle Integrated Cross-Section (barns)', fontsize=14)
+            #     plt.yscale('log')
+            #     plt.xlim(2.48,2.52)
+            #     plt.title('%s channel - Overlay at %fGK' % (ch,T),fontsize=20)
+            #     plt.legend()
+            #     plotPath = os.path.join(desiredDir,'blah/Overlay_at_%fGK.png'%T)
+            #     plt.savefig(plotPath,dpi=300)
+            #     plt.clf()
+            #
+            #
+            #     # plt.clf()
+            #     plt.clf()
 
 
         rate =  rxnRateCONST * mu**(-.5) * T**(-1.5) * integral
@@ -161,18 +161,18 @@ for ch in channels:
 
 
 
-    # Just plot this once
-    if ch == 'p0':
-        # Plot the integral as fcn of E_cm Curve
-        plt.clf()
-        plt.plot(temperature,_integralList,c='b')
-        plt.xlabel('Temperature (T9)',fontsize=14)
-        plt.ylabel('Integral Term', fontsize=14)
-        plt.yscale('log')
-        plt.title('Integral Term vs T9',fontsize=20)
-        plotPath = os.path.join(desiredDir,'integralTerm.png'%T)
-        plt.savefig(plotPath,dpi=300)
-        plt.clf()
+    # # Just plot this once
+    # if ch == 'p0':
+    #     # Plot the integral as fcn of E_cm Curve
+    #     plt.clf()
+    #     plt.plot(temperature,_integralList,c='b')
+    #     plt.xlabel('Temperature (T9)',fontsize=14)
+    #     plt.ylabel('Integral Term', fontsize=14)
+    #     plt.yscale('log')
+    #     plt.title('Integral Term vs T9',fontsize=20)
+    #     plotPath = os.path.join(desiredDir,'integralTerm.png'%T)
+    #     plt.savefig(plotPath,dpi=300)
+    #     plt.clf()
 
     rxnRate = np.array(rxnRate)
 
@@ -204,32 +204,36 @@ for ch in channels:
     azrate2 = azp2rates['Rate'].values
 
     # plt.scatter(temp0,rate0,c='silver')
-    plt.plot(temp0,rate0,color='silver',label='az extrap p0')
+    # plt.plot(temp0,rate0,color='silver',label='az extrap p0')
 
-    # plt.scatter(temp1,rate1,c='k')
-    plt.plot(temp1,rate1,color='k',label='az extrap p1')
+    if ch == 'p1':
+        # plt.scatter(temp1,rate1,c='k')
+        plt.plot(temp1,rate1,color='k',label='az extrap p1')
 
-    # plt.scatter(temp2,rate2,c='grey')
-    plt.plot(temp2,rate2,color='grey',label='az extrap p2')
+    if ch == 'p2':
+        # plt.scatter(temp2,rate2,c='grey')
+        plt.plot(temp2,rate2,color='grey',label='az extrap p2')
 
     # plt.scatter(aztemp0,azrate0,c='g')
-    plt.plot(aztemp0,azrate0,color='g',label='azure rate p0')
+    # plt.plot(aztemp0,azrate0,color='g',label='azure rate p0')
 
-    # plt.scatter(aztemp1,azrate1,c='fuchsia')
-    plt.plot(aztemp1,azrate1,color='fuchsia',label='azure rate p1')
+    if ch == 'p1':
+        # plt.scatter(aztemp1,azrate1,c='fuchsia')
+        plt.plot(aztemp1,azrate1,color='fuchsia',label='azure rate p1')
 
-    # plt.scatter(aztemp2,azrate2,c='b')
-    plt.plot(aztemp2,azrate2,color='b',label='azure rate p2')
+    if ch == 'p2':
+        # plt.scatter(aztemp2,azrate2,c='b')
+        plt.plot(aztemp2,azrate2,color='b',label='azure rate p2')
 
-    plt.grid(b=True, which='both', axis='both')
+    # plt.grid(b=True, which='both', axis='both')
 
 
     # plt.scatter(temperature,rxnRate,c='coral')
-    plt.plot(temperature,rxnRate,label='trapz',color='coral')
+    plt.plot(temperature,rxnRate,label='%s-angInt'%ch,color='coral')
     plt.legend()
     plt.yscale('log')
     plt.xlim(0,10)
-    plt.ylim(1e-30,1e8)
+    plt.ylim(1e-20,1e8)
     plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
     plt.xlabel('Temperature (T9)',fontsize=14)
     plt.savefig('%s_ReactionRate_azureAngleIntegrated.png'%ch,dpi=900)
@@ -249,7 +253,7 @@ for ch in channels:
         plt.title('p$_{0}$ Reaction Rates Ratio',fontsize=20)
         eq = r'$\frac{Rate~p_{{0}_{angInt}}}{Rate~p_{0}}$'
         plt.text(9, 1, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
-        plt.grid(b=True, which='both', axis='both')
+        # plt.grid(b=True, which='both', axis='both')
 
         savePath = os.path.join(desiredDir,'p0_RatioReactionRates_azureAngleIntegrated.png')
         plt.savefig(savePath,dpi=300)

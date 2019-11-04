@@ -279,10 +279,10 @@ for ch in channels:
         df = df.assign(Pval=pd.Series(dict_ord_pVal_a[str(legendre_order[_][-1])],index=df.index).values)
         df = df.assign(Chi2NDF=pd.Series(dict_ord_x2ndf_a[str(legendre_order[_][-1])],index=df.index).values)
 
-        csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/a%dFitEXTRAP.csv'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        csvPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/%s_a%dFitEXTRAP.csv'%(ch,legendre_order[_][-1],ch,legendre_order[_][-1]))
         df.to_csv(csvPath)
 
-        excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/a%dFitEXTRAP.xlsx'%(ch,legendre_order[_][-1],legendre_order[_][-1]))
+        excelPath = os.path.join(desiredDir,'legendre_out/DATA/%s/a%d/%s_a%dFitEXTRAP.xlsx'%(ch,legendre_order[_][-1],ch,legendre_order[_][-1]))
         df.to_excel(excelPath)
 
 

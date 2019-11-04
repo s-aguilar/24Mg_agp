@@ -174,7 +174,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 		vector < double > fPosition;
 		fPosition = single_gauss_peak(fLow[detLoop],fHigh[detLoop],ysubtracted);
 
-		// Found the lines update their ranges run by run
+		// Found the lines, update their ranges run by run
 		fLow[detLoop] = fPosition[1];
 		fLow[detLoop] = fPosition[2];
 

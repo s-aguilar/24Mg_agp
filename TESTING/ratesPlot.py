@@ -213,4 +213,5 @@ plt.text(9, 1e-3, eq, {'color': 'k', 'fontsize': 18}, va="top", ha="right")
 
 savePath = os.path.join(desiredDir,'RatioReactionRates.png')
 plt.savefig(savePath,dpi=300)
+
 # plt.show()
