@@ -379,7 +379,7 @@ for ch in channels:
     plt.legend()
     plt.title('%s channel - a0*4$\pi$ vs E - Excitation Curve' % ch)
     plt.savefig('legendre_out/excitationCurve/%s/%s_a0Curve.png' % (ch,ch),dpi=300)
-    # plt.show()
+    plt.show()
     plt.clf()
 
 
