@@ -249,8 +249,8 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 	string detNum = detector;
 
-	c0->SaveAs(Form("Yields/P2/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
-	c0->SaveAs(Form("Yields/P2/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
+	// c0->SaveAs(Form("Yields/P2/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
+	// c0->SaveAs(Form("Yields/P2/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
 
 
 	ofstream myfile;
@@ -328,14 +328,11 @@ void p2Yields(){
 	int upToRun;
 	if (loc==1) upToRun = 175;
 	else upToRun = 410;
-	for(int i=159;i<upToRun;i++){
+	for(int i=160;i<upToRun;i++){
 
 		// Skip bad runs
 		if(i>=163 && i<=166) continue;
-		else if(i==182) continue;
-		else if(i==244) continue;
-		else if(i==164) continue;
-		else if(i==166) continue;
+		else if(i>=168 && i<=171) continue;
 		else if(i==182) continue;
 		else if(i>=244 && i<=255) continue;
 		else if(i==276) continue;
@@ -344,7 +341,7 @@ void p2Yields(){
 		else if(i==289) continue;
 		else if(i==290) continue;
 		else if(i==294) continue;
-		else if(i==255) continue;
+		else if(i==406) continue;
 
 		try {
 			gSystem->Exec(Form("mkdir Yields/P2/run0%d",i));

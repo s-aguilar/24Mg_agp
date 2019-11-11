@@ -63,10 +63,14 @@ Angle = dfeff['Angle'].values
 angle = np.array([120,105,90,45,30,15,0,-15,-30,-45,-90,-105,-120])
 
 
-thickness = 25/(1e6)                        # 25ug/cm^2 converted to g/cm^2
-numOfTarget = thickness*(1/24)*6.022e23     # thickness * (mol/24 g) * N_a
+# thickness = 25/(1e6)                        # 25ug/cm^2 converted to g/cm^2
+# numOfTarget = thickness*(1/24)*6.022e23     # thickness * (mol/24 g) * N_a
 
-q_e = 1.6e-19
+thickness = 37/(1e6)                        # 37ug/cm^2 converted to g/cm^2
+numOfTarget = thickness*(1/23.985)*6.022e23     # thickness * (mol/23.985 g) * N_a
+
+
+q_e = 1.6022e-19
 scale = 1e-8    # 10^-8 C/pulse
 q_corr = scale/(2*q_e)
 barn_conv = 1/(1e-24)
@@ -131,7 +135,7 @@ for ang in AnglesList:
     _p1Cross_err = []
 
     # Average out over same angle
-    for x in range(228):    # total of 228 runs
+    for x in range(222):    # total of 228 runs
         _p1Ealpha.append(p1Ealpha[int(13*x)])
         if ang == '0':
             # print(p1Cross[x*13+6])
@@ -218,10 +222,10 @@ for ang in AnglesList:
     plt.clf()
 
 
-    # with open("rMatrix/rMatrix_p1.dat","a") as f:
-    #     for loop in range(228):
-    #         printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p1Ealpha[loop],_Angle[loop],_p1Cross[loop],_p1Cross_err[loop])
-    #         f.write(printOut)
+    with open("rMatrix/rMatrix_p1.dat","a") as f:
+        for loop in range(222):
+            printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p1Ealpha[loop],_Angle[loop],_p1Cross[loop],_p1Cross_err[loop])
+            f.write(printOut)
 
 # test1 = set(p1Cross[(df1['Detector']=='det_h0-6')][:16])
 # print(test1)
@@ -281,7 +285,7 @@ for ang in AnglesList:
 
 
     # Average out over same angle
-    for x in range(228):    # total of 228 runs
+    for x in range(222):    # total of 228 runs
         _p2Ealpha.append(p2Ealpha[int(13*x)])
         if ang == '0':
             # print(p2Cross[x*13+6])
@@ -363,10 +367,10 @@ for ang in AnglesList:
     plt.savefig('crossSection/P2/p2_%s.png'%ang,dpi=600)
     plt.clf()
 
-    # with open("rMatrix/rMatrix_p2.dat","a") as f:
-    #     for loop in range(228):
-    #         printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p2Ealpha[loop],_Angle[loop],_p2Cross[loop],_p2Cross_err[loop])
-    #         f.write(printOut)
+    with open("rMatrix/rMatrix_p2.dat","a") as f:
+        for loop in range(222):
+            printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p2Ealpha[loop],_Angle[loop],_p2Cross[loop],_p2Cross_err[loop])
+            f.write(printOut)
 # """
 
 

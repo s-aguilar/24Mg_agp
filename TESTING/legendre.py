@@ -83,8 +83,8 @@ def convert(old):
 
 # Read in the data into dataframe
 colNames = ['Energy','Angle','Cross-section','Error']
-p1 = pd.read_table('rMatrix/rMatrix_p1s.dat',names=colNames)
-p2 = pd.read_table('rMatrix/rMatrix_p2s.dat',names=colNames)
+p1 = pd.read_table('rMatrix/rMatrix_p1.dat',names=colNames)
+p2 = pd.read_table('rMatrix/rMatrix_p2.dat',names=colNames)
 # a1 = pd.read_table('rMatrix/rMatrix_a1s.dat',names=colNames)
 
 dict_channels = {'p1':p1,'p2':p2}#,'a1':a1}
@@ -196,19 +196,19 @@ for ch in channels:
 
                 # Scatter has bug when the y-values are small, the y-axis does not autoscale
                 # plt.scatter(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],s=8,label='%d'%legendre_order[ind][-1])
-        #         if ind ==2:
-        #             plt.plot(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],label='%d$^{th}$ Order'%legendre_order[ind][-1])
-        #
-        # # Angular distribution plots
-        # if plot_a:
-        #     plt.errorbar(masked_ang_chan,masked_cross_chan,yerr=masked_err_chan,c='k',fmt='o')    # Original data points
-        #     plt.xticks(ticks=[0,np.pi/4,np.pi/2],labels=['0','$\pi/4$','$\pi/2$'])
-        #     plt.xlabel('Angle',fontsize=14)
-        #     plt.ylabel('Differential Cross-Section (barns/sr)', fontsize=14)
-        #     plt.title('$^{24}$Mg($\\alpha$,p$_{%s}\\gamma$) - %5.4f MeV' % (ch[-1],nrg),fontsize=20)
-        #     plt.legend(prop={'size': 14})
-        #     plt.savefig('legendre_out/fits/%s/%5.4fMeVFit.png'%(ch,nrg),dpi=300)
-        #     plt.clf()
+                if ind ==2:
+                    plt.plot(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],label='%d$^{th}$ Order'%legendre_order[ind][-1])
+
+        # Angular distribution plots
+        if plot_a:
+            plt.errorbar(masked_ang_chan,masked_cross_chan,yerr=masked_err_chan,c='k',fmt='o')    # Original data points
+            plt.xticks(ticks=[0,np.pi/4,np.pi/2],labels=['0','$\pi/4$','$\pi/2$'])
+            plt.xlabel('Angle',fontsize=14)
+            plt.ylabel('Differential Cross-Section (barns/sr)', fontsize=14)
+            plt.title('$^{24}$Mg($\\alpha$,p$_{%s}\\gamma$) - %5.4f MeV' % (ch[-1],nrg),fontsize=20)
+            plt.legend(prop={'size': 14})
+            plt.savefig('legendre_out/fits/%s/%5.4fMeVFit.png'%(ch,nrg),dpi=300)
+            plt.clf()
 
 
     # Convert lists into arrays
@@ -284,12 +284,12 @@ for ch in channels:
         order.append(str(legendre_order[2][-1]))
 
 
-    # # Save the points
-    # df = pd.DataFrame(data=a0_final,index=energyList)
-    # df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).values)
-    # df = df.assign(Pval=pd.Series(p_final,index=df.index).values)
-    # df = df.assign(Order=pd.Series(order,index=df.index).values)
-    # df.to_excel('legendre_out/DATA/analytically/%s/%sFits.xlsx'%(ch,ch))
+    # Save the points
+    df = pd.DataFrame(data=a0_final,index=energyList)
+    df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).values)
+    df = df.assign(Pval=pd.Series(p_final,index=df.index).values)
+    df = df.assign(Order=pd.Series(order,index=df.index).values)
+    df.to_excel('legendre_out/DATA/%s/%sFits.xlsx'%(ch,ch))
 
 
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
@@ -312,36 +312,36 @@ for ch in channels:
     # spline1_mask = energyList <= 3.459
     # e_knots_mask2 = energyList >= 3.659
     # spline2_mask = energyList >= 3.659
-    e_mask1 = energyList <= 3.459
-    e_mask2 = energyList >= 3.66
+
+    # e_mask1 = energyList <= 3.459
+    # e_mask2 = energyList >= 3.65
 
 
     if ch == 'p1':
+        # e_mask1 = energyList >= 3.745
+        e_mask1 = energyList >= 3.745
+
+
         interior1 = energyList[e_mask1]
-        e1spline_x = np.linspace(min(interior1),max(interior1),100)
+        e1spline_x = np.linspace(min(interior1),max(interior1),1000)
 
         # Must optimize interior knots 't' such as not to produce spurious curves
-        knots1 = interior1[2:-1:2]
+        # knots1 = interior1[3:-1:2]
+        # knots1 = np.ma.concatenate([interior1[3:24:2],interior1[25:-1:2]])
+        # knots1 = np.ma.concatenate([interior1[3:24:2],interior1[25:30:1],interior1[31:-1:2]])
+
+        knots1 = np.ma.concatenate([interior1[3:24:2],interior1[25:30:1],interior1[32:37:2],interior1[37:-1:2]])
+
+
         weights1 = 1/(a0_err_final[e_mask1]*solidAngle)            # 1/sigma
 
         # Create a cubic spline representation that is weighted by the uncertainties 'w'
         spline1 = LSQUnivariateSpline(energyList[e_mask1],a0_final[e_mask1]*solidAngle, t = knots1, w = weights1)
         y_val1 = spline1(e1spline_x)
 
-
-        interior2 = energyList[e_mask2]
-        e2spline_x = np.linspace(min(interior2),max(interior2),1000)
-
-        # Must optimize interior knots 't' such as not to produce spurious curves
-        knots2 = interior2[1:-1:2]
-        knots2 = np.ma.concatenate([interior2[1:50:2],interior2[51:70:1],interior2[71:-1:2]])
-        weights2 = 1/(a0_err_final[e_mask2]*solidAngle)            # 1/sigma
-
-        # Create a cubic spline representation that is weighted by the uncertainties 'w'
-        spline2 = LSQUnivariateSpline(energyList[e_mask2],a0_final[e_mask2]*solidAngle, t = knots2, w = weights2)
-        y_val2 = spline2(e2spline_x)
-
-    if ch == 'p2':
+    elif ch == 'p2':
+        e_mask1 = energyList <= 3.459
+        e_mask2 = energyList >= 3.67
         interior1 = energyList[e_mask1]
         e1spline_x = np.linspace(min(interior1),max(interior1),100)
 
@@ -359,8 +359,8 @@ for ch in channels:
 
         # Must optimize interior knots 't' such as not to produce spurious curves
         # knots2 = interior2[1:-1:2]
-        # knots2 = np.ma.concatenate([interior2[1:45:2],interior2[46:65:1],interior2[65:84:2],interior2[85:93:3],interior2[94:-1:2]])
-        knots2 = np.ma.concatenate([interior2[1:43:2],interior2[47:54:1],interior2[55:65:1],interior2[67:84:2],interior2[85:93:3],interior2[94:-1:2]])
+        knots2 = np.ma.concatenate([interior2[1:6:3],interior2[7:18:1],interior2[19:46:2],interior2[46:65:1],interior2[67:84:2],interior2[85:93:3],interior2[94:-1:2]])
+        # knots2 = np.ma.concatenate([interior2[1:6:3],interior2[7:18:1],interior2[19:46:2],interior2[46:51:2],interior2[51:54:2],interior2[55:65:1],interior2[67:84:2],interior2[85:93:3],interior2[94:-1:2]])
         weights2 = 1/(a0_err_final[e_mask2]*solidAngle)            # 1/sigma
 
         # Create a cubic spline representation that is weighted by the uncertainties 'w'
@@ -370,28 +370,36 @@ for ch in channels:
     # Plot the splines and the points
     plt.clf()
 
-    plt.plot(e1spline_x,y_val1,c='b')
-    plt.plot(e2spline_x,y_val2,c='b',label='Cubic Spline')
-    plt.errorbar(energyList,a0_final*solidAngle,yerr=a0_err_final*solidAngle,fmt='.',c='k')
+    plt.plot(e1spline_x,y_val1,c='b',label='Cubic Spline')
+    plt.errorbar(energyList[e_mask1],a0_final[e_mask1]*solidAngle,yerr=a0_err_final[e_mask1]*solidAngle,fmt='.',c='k')
+    if ch == 'p2':
+        plt.plot(e2spline_x,y_val2,c='b')
+        plt.errorbar(energyList[e_mask2],a0_final[e_mask2]*solidAngle,yerr=a0_err_final[e_mask2]*solidAngle,fmt='.',c='k')
+
     plt.xlabel('E$_{CM}$ (MeV)',fontsize=14)
     plt.ylabel('Angle Integrated Cross-Section (barns)', fontsize=14)
     plt.yscale('log')
     plt.legend()
     plt.title('%s channel - a0*4$\pi$ vs E - Excitation Curve' % ch)
     plt.savefig('legendre_out/excitationCurve/%s/%s_a0Curve.png' % (ch,ch),dpi=300)
-    plt.show()
+    # plt.show()
     plt.clf()
+    # exit()
 
 
     # Save the points
     df = pd.DataFrame(data=a0_final,index=energyList,columns=['a0'])
     df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).values)
     df = df.assign(fitOrder=pd.Series(order,index=df.index).values)
-    df.to_excel('legendre_out/DATA/%s/%sFitPoints.xlsx'%(ch,ch))
+    df.to_excel('legendre_out/DATA/%s/%sCrossPoints.xlsx'%(ch,ch))
 
     # Splined CrossSection, first merge the splines
-    yvals = np.ma.concatenate([y_val1,y_val2])
-    xvals = np.ma.concatenate([e1spline_x,e2spline_x])
+    if ch == 'p1':
+        yvals = y_val1
+        xvals = e1spline_x
+    else:
+        yvals = np.ma.concatenate([y_val1,y_val2])
+        xvals = np.ma.concatenate([e1spline_x,e2spline_x])
     df = pd.DataFrame(data=xvals,columns=['splineX'])
     df = df.assign(splineY=pd.Series(yvals,index=df.index).values)
     df.to_excel('legendre_out/DATA/%s/%sSplinePoints.xlsx'%(ch,ch))
@@ -428,18 +436,22 @@ for ch in channels:
         spline1 = LSQUnivariateSpline(E1,integrand[e_mask1], t = knots1, w = weights1)
         y_val1 = spline1(e1spline_x)
 
+        if ch == 'p2':
+            E2 = energyList[e_mask2]
+            weights2 = 1/integrand_err[e_mask2]            # 1/sigma
 
-        E2 = energyList[e_mask2]
-        weights2 = 1/integrand_err[e_mask2]            # 1/sigma
+            # Create a cubic spline representation that is weighted by the uncertainties 'w'
+            spline2 = LSQUnivariateSpline(E2,integrand[e_mask2], t = knots2, w = weights2)
+            y_val2 = spline2(e2spline_x)
+            plt.plot(e2spline_x,y_val2,c='b')
 
-        # Create a cubic spline representation that is weighted by the uncertainties 'w'
-        spline2 = LSQUnivariateSpline(E2,integrand[e_mask2], t = knots2, w = weights2)
-        y_val2 = spline2(e2spline_x)
+        plt.plot(e1spline_x,y_val1,c='b',label='Cubic Spline')
 
-        plt.plot(e1spline_x,y_val1,c='b')
-        plt.plot(e2spline_x,y_val2,c='b',label='Cubic Spline')
         # plt.xlim(0,10)
-        plt.errorbar(E,integrand,yerr=integrand_err,fmt='.',c='k')
+        plt.errorbar(E[e_mask1],integrand[e_mask1],yerr=integrand_err[e_mask1],fmt='.',c='k')
+        if ch == 'p2':
+            plt.errorbar(E[e_mask2],integrand[e_mask2],yerr=integrand_err[e_mask2],fmt='.',c='k')
+            plt.plot(e2spline_x,y_val2,c='b',label='Cubic Spline')
         plt.yscale('log')
         plt.ylabel('Reaction Rate Integrand',fontsize=14)
         plt.xlabel('E$_{CM}$ (MeV)',fontsize=14)
@@ -449,15 +461,31 @@ for ch in channels:
         plt.savefig('%s_DataReactionRate_integrand_at_%fGK.png'%(ch,T),dpi=300)
         # plt.show()
 
-        yvals = np.ma.concatenate([y_val1,y_val2])
-        xvals = np.ma.concatenate([e1spline_x,e2spline_x])
+        if ch == 'p1':
+            yvals = y_val1
+            xvals = e1spline_x
+        else:
+            yvals = np.ma.concatenate([y_val1,y_val2])
+            xvals = np.ma.concatenate([e1spline_x,e2spline_x])
         df = pd.DataFrame(data=xvals,columns=['splineX'])
         df = df.assign(splineY=pd.Series(yvals,index=df.index).values)
         df.to_excel('legendre_out/DATA/%s/%sIntegrandSplinePoints%f.xlsx'%(ch,ch,T))
 
 
+        integrand_x = E[e_mask1]
+        integrand_y = integrand[e_mask1]
+        if ch == 'p2':
+            integrand_x = np.ma.concatenate( [integrand_x,E[e_mask2]] )
+            integrand_y = np.ma.concatenate( [integrand_y,integrand[e_mask2]] )
+
+        df = pd.DataFrame(data=integrand_x,columns=['integrand_x'])
+        df = df.assign(integrand_y=pd.Series(integrand_y,index=df.index).values)
+        df.to_excel('legendre_out/DATA/%s/%sIntegrandDataPoints%f.xlsx'%(ch,ch,T))
+
+
         intg = spline1.integral(min(E1),max(E1))
-        intg += spline2.integral(min(E2),max(E2))
+        if ch == 'p2':
+            intg += spline2.integral(min(E2),max(E2))
 
 
         # rate =  3.7313E10 * mu**(-.5) * T**(-1.5) * intg

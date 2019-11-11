@@ -327,14 +327,11 @@ void a1Yields(){
 	int upToRun;
 	if (loc==1) upToRun = 175;
 	else upToRun = 410;
-	for(int i=159;i<upToRun;i++){
+	for(int i=160;i<upToRun;i++){
 
 		// Skip bad runs
 		if(i>=163 && i<=166) continue;
-		else if(i==182) continue;
-		else if(i==244) continue;
-		else if(i==164) continue;
-		else if(i==166) continue;
+		else if(i>=168 && i<=171) continue;
 		else if(i==182) continue;
 		else if(i>=244 && i<=255) continue;
 		else if(i==276) continue;
@@ -343,7 +340,7 @@ void a1Yields(){
 		else if(i==289) continue;
 		else if(i==290) continue;
 		else if(i==294) continue;
-		else if(i==255) continue;
+		else if(i==406) continue;
 
 		try {
 			gSystem->Exec(Form("mkdir Yields/A1/run0%d",i));
