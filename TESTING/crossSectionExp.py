@@ -17,7 +17,8 @@ plt.rcParams['ytick.labelsize']=12
 # This function checks to see if the errror is larger than the measurement,
 # if it is it just artificially assigns it an error
 def check(x,x_err):
-    if x_err >= x: return x*.9
+    if x_err >= x:
+        return x*.9
     #if x_err >= x: return x_err
     else: return x_err
 
@@ -76,6 +77,8 @@ q_corr = scale/(2*q_e)
 barn_conv = 1/(1e-24)
 solidAngle = 4*np.pi
 
+# nuke = 37/1e6 * 1/23.985*6.022e23*1e-24
+
 # """
 # Extract the columns of the DataFrame as numpy arrays
 
@@ -100,7 +103,7 @@ p1Ealpha = df1['Ea'].values/1000    # Convert keV to MeV
 # Fit Status == 1 -> Bad Fit
 #
 # Mask for which the fit was bad
-
+#
 # """
 # mask1Fit = (df1['Fit Status'] == 0) # Not currently in use
 # mask1Fit = (df1['Area'] > 1000)
@@ -118,16 +121,16 @@ p1Ealpha = df1['Ea'].values/1000    # Convert keV to MeV
 #     plt.title('p1 %s    %d$^{\circ}$'%(detectors[det],angle[det]))
 #     plt.savefig('yieldPlots/P1/p1_%s.png'%detectors[det],dpi=300)
 
-# with open("rMatrix_p1.dat","w") as f:
-#     for loop in range(len(p1Cross)):
-#         printOut= '%f \t %d \t %.8f \t %.8f \n' %(p1Ealpha[loop],Angle[loop],p1Cross[loop],p1Cross_err[loop])
-#         f.write(printOut)
+with open("rMatrix/24Mg_rMatrix_p1_allAngles.dat","w") as f:
+    for loop in range(len(p1Cross)):
+        printOut= '%f \t %d \t %.8f \t %.8f \n' %(p1Ealpha[loop],Angle[loop],p1Cross[loop],p1Cross_err[loop])
+        f.write(printOut)
 
 AnglesList=['0','15','30','45','90','105','120']
 
 # test2 = []
-# f = open("rMatrix/rMatrix_p1.dat","w")
-# f.close()
+f = open("rMatrix/24Mg_rMatrix_p1.dat","w")
+f.close()
 for ang in AnglesList:
     _p1Ealpha = []
     _Angle = []
@@ -135,7 +138,7 @@ for ang in AnglesList:
     _p1Cross_err = []
 
     # Average out over same angle
-    for x in range(222):    # total of 228 runs
+    for x in range(222):    # total of 222 runs
         _p1Ealpha.append(p1Ealpha[int(13*x)])
         if ang == '0':
             # print(p1Cross[x*13+6])
@@ -213,7 +216,7 @@ for ang in AnglesList:
     # plt.plot(_p1Ealpha,_p1Cross)
     plt.errorbar(_p1Ealpha,_p1Cross,yerr=_p1Cross_err,fmt='b.',markersize='2')
     plt.yscale('log')
-    plt.ylim(1e-6,1)
+    # plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
     plt.xlabel('$E_{\\alpha}$ (MeV)', fontsize=14)
     plt.ylabel('Differential Cross-Section (barns/sr)', fontsize=14)
@@ -222,7 +225,7 @@ for ang in AnglesList:
     plt.clf()
 
 
-    with open("rMatrix/rMatrix_p1.dat","a") as f:
+    with open("rMatrix/24Mg_rMatrix_p1.dat","a") as f:
         for loop in range(222):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p1Ealpha[loop],_Angle[loop],_p1Cross[loop],_p1Cross_err[loop])
             f.write(printOut)
@@ -273,10 +276,13 @@ p2Ealpha = df2['Ea'].values/1000    # Convert keV to MeV
 #     plt.savefig('yieldPlots/P2/p2_%s.png'%detectors[det],dpi=300)
 
 
-# f = open("rMatrix/rMatrix_p2.dat","w")
-# f.close("legend_out/coef_curve/")
+with open("rMatrix/24Mg_rMatrix_p2_allAngles.dat","w") as f:
+    for loop in range(len(p2Cross)):
+        printOut= '%f \t %d \t %.8f \t %.8f \n' %(p2Ealpha[loop],Angle[loop],p2Cross[loop],p2Cross_err[loop])
+        f.write(printOut)
 
-
+f = open("rMatrix/24Mg_rMatrix_p2.dat","w")
+f.close()
 for ang in AnglesList:
     _p2Ealpha = []
     _Angle = []
@@ -285,7 +291,7 @@ for ang in AnglesList:
 
 
     # Average out over same angle
-    for x in range(222):    # total of 228 runs
+    for x in range(222):    # total of 222 runs
         _p2Ealpha.append(p2Ealpha[int(13*x)])
         if ang == '0':
             # print(p2Cross[x*13+6])
@@ -359,7 +365,7 @@ for ang in AnglesList:
     # plt.plot(_p2Ealpha,_p2Cross)
     plt.errorbar(_p2Ealpha,_p2Cross,yerr=_p2Cross_err,fmt='b.',markersize='2')
     plt.yscale('log')
-    plt.ylim(1e-6,1)
+    # plt.ylim(1e-6,1)
     plt.xlim(4,5.6)
     plt.xlabel('$E_{\\alpha}$ (MeV)', fontsize=14)
     plt.ylabel('Differential Cross-Section (barns/sr)', fontsize=14)
@@ -367,14 +373,14 @@ for ang in AnglesList:
     plt.savefig('crossSection/P2/p2_%s.png'%ang,dpi=600)
     plt.clf()
 
-    with open("rMatrix/rMatrix_p2.dat","a") as f:
+    with open("rMatrix/24Mg_rMatrix_p2.dat","a") as f:
         for loop in range(222):
             printOut= '%f \t %d \t %.8f \t %.8f \n' %(_p2Ealpha[loop],_Angle[loop],_p2Cross[loop],_p2Cross_err[loop])
             f.write(printOut)
 # """
 
 
-"""
+# """
 # Extract the columns of the DataFrame as numpy arrays
 a1Run = df3['Run'].values
 a1Det = df3['Detector'].values
@@ -397,7 +403,7 @@ a1Ealpha = df3['Ea'].values/1000    # Convert keV to MeV
 # Mask for which the fit was bad
 # mask3Fit = (df3['Fit Status'] == 0)
 # mask3Fit = (df3['Area'] > 1000)
-
+#
 # for det in range(len(detectors)):
 #
 #     maskDet = ((df3['Detector']==detectors[det]) & mask3Fit)
@@ -412,9 +418,13 @@ a1Ealpha = df3['Ea'].values/1000    # Convert keV to MeV
 #     plt.title('a1 %s    %d$^{\circ}$'%(detectors[det],angle[det]))
 #     plt.savefig('yieldPlots/A1/a1_%s.png'%detectors[det],dpi=300)
 
-# f = open("rMatrix/rMatrix_a1.dat","w")
-# f.close()
+with open("rMatrix/24Mg_rMatrix_a1_allAngles.dat","w") as f:
+    for loop in range(len(a1Cross)):
+        printOut= '%f \t %d \t %.8f \t %.8f \n' %(a1Ealpha[loop],Angle[loop],a1Cross[loop],a1Cross_err[loop])
+        f.write(printOut)
 
+f = open("rMatrix/24Mg_rMatrix_a1.dat","w")
+f.close()
 for ang in AnglesList:
     _a1Ealpha = []
     _Angle = []
@@ -422,7 +432,7 @@ for ang in AnglesList:
     _a1Cross_err = []
 
     # Average out over same angle
-    for x in range(228):    # total of 228 runs
+    for x in range(222):    # total of 222 runs
         _a1Ealpha.append(a1Ealpha[int(13*x)])
         if ang == '0':
             # print(a1Cross[x*13+6])
@@ -509,10 +519,10 @@ for ang in AnglesList:
     plt.savefig('crossSection/A1/a1_%s.png'%ang,dpi=300)
     plt.clf()
 
-    # with open("rMatrix/rMatrix_a1.dat","a") as f:
-    #     for loop in range(228):
-    #         printOut= '%f \t %d \t %.8f \t %.8f \n' %(_a1Ealpha[loop],_Angle[loop],_a1Cross[loop],_a1Cross_err[loop])
-    #         f.write(printOut)
+    with open("rMatrix/24Mg_rMatrix_a1.dat","a") as f:
+        for loop in range(222):
+            printOut= '%f \t %d \t %.8f \t %.8f \n' %(_a1Ealpha[loop],_Angle[loop],_a1Cross[loop],_a1Cross_err[loop])
+            f.write(printOut)
 # """
 
 print('DONE!')

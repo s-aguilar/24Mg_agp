@@ -83,9 +83,9 @@ def convert(old):
 
 # Read in the data into dataframe
 colNames = ['Energy','Angle','Cross-section','Error']
-p1 = pd.read_table('rMatrix/rMatrix_p1.dat',names=colNames)
-p2 = pd.read_table('rMatrix/rMatrix_p2.dat',names=colNames)
-# a1 = pd.read_table('rMatrix/rMatrix_a1s.dat',names=colNames)
+p1 = pd.read_table('rMatrix/24Mg_rMatrix_p1.dat',names=colNames)
+p2 = pd.read_table('rMatrix/24Mg_rMatrix_p2.dat',names=colNames)
+# a1 = pd.read_table('rMatrix/24Mg_rMatrix_a1s.dat',names=colNames)
 
 dict_channels = {'p1':p1,'p2':p2}#,'a1':a1}
 
@@ -148,6 +148,8 @@ for ch in channels:
         is_nrg = chan['E_CM']==nrg      # create boolean mask
         chan_temp = chan[is_nrg]
 
+        # print(nrg)
+
         # Energy is in center-of-mass
         masked_nrg_chan = chan_temp['E_CM'].values
         masked_ang_chan = np.radians(chan_temp['Angle'].values)
@@ -172,8 +174,8 @@ for ch in channels:
 
             results = chi2_mat(masked_cross_chan,masked_err_chan,ind)
 
-            dict_ord_a[str(legendre_order[ind][-1])].append(results[0])
-            dict_ord_err_a[str(legendre_order[ind][-1])].append(results[1])
+            dict_ord_a[str(legendre_order[ind][-1])].append(results[0])#*37/1e6 * 1/23.985*6.022e23*1/1e-24)
+            dict_ord_err_a[str(legendre_order[ind][-1])].append(results[1])#*37/1e6 * 1/23.985*6.022e23*1/1e-24)
             dict_ord_x2_a[str(legendre_order[ind][-1])].append(results[2])
             dict_ord_x2ndf_a[str(legendre_order[ind][-1])].append(results[3])
             dict_ord_pVal_a[str(legendre_order[ind][-1])].append(results[4])
@@ -182,8 +184,8 @@ for ch in channels:
                 # Note: The legendre.legval function requires the coefficients
                 # of all terms up to whatever order you want, must pad the even
                 # terms with 0's, this is done through the 'convert' function
-                temp_coef = convert(results[0])
-                temp_coef_err = convert(results[1])
+                temp_coef = convert(results[0]) #* 37/1e6 * 1/23.985*6.022e23*1/1e-24
+                temp_coef_err = convert(results[1]) #*  37/1e6 * 1/23.985*6.022e23*1/1e-24
 
                 # Recording points of some angular distributions
                 # # if nrg == 4.30930:
@@ -417,19 +419,24 @@ for ch in channels:
 
     rxnRate = []
     integrandList = []
+    eList = []
     filenames = []
+    tempNames= []
 
+    # temp variable contains the list of integrands and energies which will be written to an excel file
     for T in temperature:
 
         plt.clf()
 
         E = energyList
         integrand = (a0_final*solidAngle) * E * np.exp(-11.604*E/T)
+        temp = integrand[e_mask1]
         integrand_err = (a0_err_final*solidAngle) * E * np.exp(-11.604*E/T) # MAYBE?
 
 
         # Combine integral of both splines
         E1 = energyList[e_mask1]
+        tempE = E1
         weights1 = 1/integrand_err[e_mask1]            # 1/sigma
 
         # Create a cubic spline representation that is weighted by the uncertainties 'w'
@@ -440,10 +447,21 @@ for ch in channels:
             E2 = energyList[e_mask2]
             weights2 = 1/integrand_err[e_mask2]            # 1/sigma
 
+            temp = np.ma.concatenate([integrand[e_mask1],integrand[e_mask2]])
+            tempE = np.ma.concatenate([E1,E2])
+
             # Create a cubic spline representation that is weighted by the uncertainties 'w'
             spline2 = LSQUnivariateSpline(E2,integrand[e_mask2], t = knots2, w = weights2)
             y_val2 = spline2(e2spline_x)
             plt.plot(e2spline_x,y_val2,c='b')
+
+
+        # Stuff for integrand
+        tempNames.append('T=%3.2fK'%T)
+        integrandList.append(temp)
+        eList.append(tempE)
+
+
 
         plt.plot(e1spline_x,y_val1,c='b',label='Cubic Spline')
 
@@ -492,13 +510,21 @@ for ch in channels:
         rate =  rxnRateCONST * mu**(-.5) * T**(-1.5) * intg
         rxnRate.append(rate)
 
+    # Make different sheets for integrand for each temperature
+    with pd.ExcelWriter('legendre_out/integrand/%s_integrands.xlsx'%ch) as writer:
+        for ind in range(len(tempNames)):
+            print(tempNames[ind])
+            tempdf = pd.DataFrame(data=integrandList[ind],index=eList[ind],columns=['Integrand'])
+            tempdf = tempdf.rename_axis('E_cm (MeV)',axis=0) # rename the index axis
+            print(tempdf.head(5))
+            tempdf.to_excel(writer,sheet_name=tempNames[ind])
 
 
     import imageio
     images = []
     for filename in filenames:
         images.append(imageio.imread(filename))
-    imageio.mimsave('blah/%sdata_integrand.gif'%ch, images,duration=1)
+    imageio.mimsave('legendre_out/%s_data_integrand.gif'%ch, images,duration=1)
     # exit()
 
     plt.clf()

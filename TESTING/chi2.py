@@ -34,6 +34,8 @@ def chi2_det(data,data_unc,order):
 
     angles = np.radians([0,15,30,45,60,75,90])
     x = np.cos(angles)
+    # print(x)
+    # print(weights)
     weights = np.array([1/data_unc[i]**2 for i in range(len(data))])     # 1/sig_i**2 array
 
 

@@ -174,7 +174,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 		vector < double > fPosition;
 		fPosition = single_gauss_peak(fLow[detLoop],fHigh[detLoop],ysubtracted);
 
-		// Found the lines update their ranges run by run
+		// Found the lines, update their ranges run by run
 		fLow[detLoop] = fPosition[1];
 		fLow[detLoop] = fPosition[2];
 
@@ -222,6 +222,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	}
 
 
+
 	h3->GetXaxis()->SetRangeUser(600,1200);
 	h3->Draw();
 	h3->SetStats(kFALSE);
@@ -249,17 +250,37 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 	string detNum = detector;
 
-	c0->SaveAs(Form("Yields/P1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
-	c0->SaveAs(Form("Yields/P1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
+  // nt n = h3->GetNbinsX();
+  // ILE *fptr = fopen(Form("histSubCal_0%s_%s.dat",runNum.c_str(),detNum.c_str()), "w");
+  // or (int i=1; i<=n; i++) {
+  // fprintf(fptr,"%g\t%g\n",
+  // 		h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2,
+  // 		h3->GetBinContent(i));
+  //  }
+  //  fclose(fptr);
+  //
+  //  h3 = calibrate2(a_cal,b_cal,h3,hyield);
+  //
+  //  n = h3->GetNbinsX();
+  //  fptr = fopen(Form("histRawCal_0%s_%s.dat",runNum.c_str(),detNum.c_str()), "w");
+  //  for (int i=1; i<=n; i++) {
+  //   fprintf(fptr,"%g\t%g\n",
+  // 	   h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2,
+  // 	   h3->GetBinContent(i));
+  // }
+  // fclose(fptr);
+
+	// c0->SaveAs(Form("Yields/P1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
+	// c0->SaveAs(Form("Yields/P1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
 
 
-	// ofstream myfile;
-	// myfile.open ("Yields/P1/_P1.csv",std::ios::app);
-	// myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
-	// 			yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
-	// 			goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
-	// 			offset<<","<<charge<<"\n";
-	// myfile.close();
+	ofstream myfile;
+	myfile.open ("Yields/P1/_P1.csv",std::ios::app);
+	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
+				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
+				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
+				offset<<","<<charge<<"\n";
+	myfile.close();
 
 
 	c0->Clear();
@@ -293,12 +314,12 @@ void p1Yields(){
 	const char *files;
 
 	// // Prepare structure of data output in CSV file
-	// ofstream myfile;
-	// myfile.open ("Yields/P1/_P1.csv",std::ios::out);
-	// myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
-	// 		<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
-	// 		<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
-	// myfile.close();
+	ofstream myfile;
+	myfile.open ("Yields/P1/_P1.csv",std::ios::out);
+	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
+			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
+			<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
+	myfile.close();
 
 	// BG spectra peak ranges
 	const vector < double >  peak1BackLow ({310,330,330,330,320,340,330,330,330,330,320,310,330});
@@ -329,14 +350,11 @@ void p1Yields(){
 	int upToRun;
 	if (loc==1) upToRun = 175;
 	else upToRun = 410;
-	for(int i=159;i<upToRun;i++){
+	for(int i=160;i<upToRun;i++){
 
 		// Skip bad runs
 		if(i>=163 && i<=166) continue;
-		else if(i==182) continue;
-		else if(i==244) continue;
-		else if(i==164) continue;
-		else if(i==166) continue;
+		else if(i>=168 && i<=171) continue;
 		else if(i==182) continue;
 		else if(i>=244 && i<=255) continue;
 		else if(i==276) continue;
@@ -345,7 +363,7 @@ void p1Yields(){
 		else if(i==289) continue;
 		else if(i==290) continue;
 		else if(i==294) continue;
-		else if(i==255) continue;
+		else if(i==406) continue;
 
 		try {
 			gSystem->Exec(Form("mkdir Yields/P1/run0%d",i));
