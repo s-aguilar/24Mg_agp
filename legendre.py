@@ -293,6 +293,21 @@ for ch in channels:
     df = df.assign(Order=pd.Series(order,index=df.index).values)
     df.to_excel('legendre_out/DATA/%s/%sFits.xlsx'%(ch,ch))
 
+    # Save angle integrated cross section for rMatrix
+    with open('rMatrix/24Mg_rMatrix_%s_angInt.dat'%ch,'w') as f:
+        print(len(a0_final),len(a0_err_final),len(energyList))
+
+        cross = np.array(a0_final)*4*np.pi
+        cross_err = np.array(a0_err_final)*4*np.pi
+        print(len(a0_final),len(a0_err_final),len(energyList))
+        # exit()
+        for loop in range(len(energyList)):
+            if cross[loop] > 0 and cross_err[loop] > 0 and cross_err[loop] < cross[loop]:
+                printOut= '%f \t %d \t %.8f \t %.8f \n' %(energyList[loop],0,cross[loop],cross_err[loop])
+                f.write(printOut)
+            else:
+                print('Problem at Ep:',energyList[loop])
+
 
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.
