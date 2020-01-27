@@ -106,7 +106,7 @@ for ch in channels:
     chan = dict_channels[ch]
 
     # is in Lab energy, convert to center-of-mass
-    energyCM_chan = chan['Energy'].values*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
+    energyCM_chan = chan['Energy'].values#*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
     chan = chan.assign(E_CM=pd.Series(energyCM_chan,index=chan.index).values)
     # print(chan.head())
     angle_chan = chan['Angle'].values
@@ -307,7 +307,7 @@ for ch in channels:
                 f.write(printOut)
             else:
                 print('Problem at Ep:',energyList[loop])
-
+    continue
 
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.
