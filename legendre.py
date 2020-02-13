@@ -85,10 +85,9 @@ def convert(old):
 colNames = ['Energy','Angle','Cross-section','Error']
 p1 = pd.read_table('rMatrix/24Mg_rMatrix_p1.dat',names=colNames)
 p2 = pd.read_table('rMatrix/24Mg_rMatrix_p2.dat',names=colNames)
-# a1 = pd.read_table('rMatrix/24Mg_rMatrix_a1s.dat',names=colNames)
+a1 = pd.read_table('rMatrix/24Mg_rMatrix_a1.dat',names=colNames)
 
-dict_channels = {'p1':p1,'p2':p2}#,'a1':a1}
-
+dict_channels = {'p1':p1,'p2':p2,'a1':a1}
 
 # If plot is 0 then no plotting, any other value it will generate the plots
 # 'a' for analytic solution plots
@@ -96,8 +95,8 @@ plot_a = 0
 
 
 # Perform the analysis over all the channels
-channels = ['p1','p2']#,'a1']
-# channels = ['p2']
+channels = ['p1','p2','a1']
+
 for ch in channels:
 
     print(ch,' channel:\n-Working on Legendre fitting')
@@ -106,7 +105,7 @@ for ch in channels:
     chan = dict_channels[ch]
 
     # is in Lab energy, convert to center-of-mass
-    energyCM_chan = chan['Energy'].values#*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
+    energyCM_chan = chan['Energy'].values*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
     chan = chan.assign(E_CM=pd.Series(energyCM_chan,index=chan.index).values)
     # print(chan.head())
     angle_chan = chan['Angle'].values
@@ -307,7 +306,7 @@ for ch in channels:
                 f.write(printOut)
             else:
                 print('Problem at Ep:',energyList[loop])
-    continue
+
 
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.

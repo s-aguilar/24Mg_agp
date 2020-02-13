@@ -1,3 +1,12 @@
+'''
+This script reads in the yield files produced from `xxyields_pa.C` as well as
+the experimental online logbook file. A pandas DataFrame is used, and modified
+to have the yields, the efficiency corrected yields, run number, and beam
+energy. The DataFrame is then `cleaned` for bad data and when finalized it is
+then saved to an excel file, for subsequent analysis and plotting in
+crossSectionV2.py
+'''
+import time
 import numpy as np
 import pandas as pd
 
