@@ -1,6 +1,10 @@
 #include <iostream>
 using std::cout;
 using std::endl;
+using std::ofstream;
+
+#include <ostream>
+#include <fstream>
 
 #include <unistd.h>
 
@@ -30,11 +34,12 @@ using std::vector;
 
 
 // Fitting routines
-// #include "/Users/sebastian/Desktop/27Al_pga/calibration/fitFunctions.h"
-#include "/Users/sebastian/Desktop/24Mg_agp/calibration/fitFunctions.h"
+// #include "/Users/sebastian/Desktop/24Mg_agp/calibration/fitFunctions.h"
+#include "calibration/fitFunctions.h"
 
 // Gain match routine
-#include "/Users/sebastian/Desktop/24Mg_agp/calibration/gainMatch.h"
+// #include "/Users/sebastian/Desktop/24Mg_agp/calibration/gainMatch.h"
+#include "calibration/gainMatch.h"
 
 
 // Flourine line from first run, these get updated run by run with the new ranges
@@ -43,7 +48,7 @@ double fHigh[] = {140,143,144,144,141,147,146,146,143,143,147,143,147};
 
 
 // if 1, use local, if 0 use CRC
-int loc = 1;
+int loc = 0;
 
 // if 1, save plots, if 0 don't save
 int plot = 0;
@@ -51,7 +56,6 @@ int plot = 0;
 
 void peakFitter(TFile *TFitOut, const char *fileName, const char *detector,
 	int detLoop){
-
 
 	// Reset global variables
 	gROOT->Reset();
@@ -76,46 +80,12 @@ void peakFitter(TFile *TFitOut, const char *fileName, const char *detector,
 	// c0->Divide(1,2);
 	c0->Update();
 
-	// c0->cd(1);
-
-	// // Prepare histograms and name them
-	// TH1D *h1 = new TH1D(Form("h1 - det%i",detLoop),Form("h1 - det%i",detLoop),4096,0,4096);
-	// TH1D *h2 = new TH1D(Form("h2 - det%i",detLoop),Form("h2 - ECAL - det%i",detLoop),4096,0,4096);
-
-	double area;
-	double area_err;
-	double chi2NDF;
-	double sig1;
-	double sig2;
-	bool isValid;
-	int status;
-
-	// Draw results
-	// hyield->Draw();
-	// hyield->GetXaxis()->SetRangeUser(2,2500);
-	// hyield->SetStats(kFALSE);
-	// gPad->SetLogy();
-	// c0->cd(2);
-	// hyield->SetBinContent(0,0);
-	// hyield->GetXaxis()->SetRangeUser(0,2500);
-	//
-	// gPad->SetLogy();
-	// hyield->GetYaxis()->SetTitle("Counts/Channel");
-	// hyield->Draw();
-	// hyield->SetStats(kFALSE);
-	// hyield->GetXaxis()->SetTitle("Channel");
-	// hyield->GetYaxis()->SetTitle("Counts/Channel");
-	// hyield->GetXaxis()->CenterTitle();
-	// hyield->GetYaxis()->CenterTitle();
-	// hyield->SetTitle("");
-
 	// Energy calibrate the spectra
 	vector < double >  peak2SpecLow ({1285,1400,1400,1390,1360,1430,1410,1420,1410,1410,1420,1410,1400});
 	vector < double >  peak2SpecHigh ({1360,1480,1510,1485,1440,1510,1480,1500,1480,1510,1530,1490,1490});
 
 	// Find the BG peak positions in runs
 	vector < double > peak2Position;
-
 	peak2Position = iterative_double_gauss_peak(peak2SpecLow[detLoop],peak2SpecHigh[detLoop],hyield);
 
 	vector < double > fPosition;
@@ -126,117 +96,43 @@ void peakFitter(TFile *TFitOut, const char *fileName, const char *detector,
 	TH1D *h3 = new TH1D(Form("h3 - det-%i",detLoop),Form("h3 - ECAL - det-%i",detLoop),8192,0,8192);
 	calibrators = calibrate(109.9,1468,fPosition[0],peak2Position[0],h3,hyield);
 
-	// h3->SetBinContent(0,0);
-	h3->GetXaxis()->SetRangeUser(0,2500);
 
+	h3->GetXaxis()->SetRangeUser(0,3500);
 	gPad->SetLogy();
-	// h3->GetYaxis()->SetTitle("Counts/bin");
 	h3->Draw();
 	h3->SetStats(kFALSE);
 	h3->GetXaxis()->SetTitle("Energy (keV)");
 	h3->GetYaxis()->SetTitle("Counts / Bin");
-	// cout << h3->GetBinWidth(1000)<<endl;  // 1 keV bins
 	h3->GetXaxis()->CenterTitle();
 	h3->GetYaxis()->CenterTitle();
 	h3->SetTitle("");
 
-
-	// Tlatex (x ,y)
-	// TArrow (x1,y1,x2,y2)
-
-	TLatex tt(1830,600000,"E_{#bf{#alpha}} = 5.441 MeV");
-	tt.SetTextSize(0.05);
-	tt.Draw();
-
-	TLatex t(1200,3200,"#bf{#alpha}_{1} \t1.369 MeV");
-	t.SetTextSize(0.035);
-	TArrow ar(1369,2500,1369,800,0.01,"|>");
-	ar.Draw();
-	t.Draw("SAME");
-
-	TLatex t1(700,2300,"p_{1} \t0.844 MeV");
-	t1.SetTextSize(0.035);
-	TArrow ar1(844,2100,844,500,0.01,"|>");
-	ar1.Draw();
-	t1.Draw("SAME");
-
-	TLatex t2(900,1100,"p_{2} \t1.015 MeV");
-	t2.SetTextSize(0.035);
-	TArrow ar2(1015,800,1015,300,0.01,"|>");
-	ar2.Draw();
-	t2.Draw("SAME");
-
-	h3->SetLineColor(kBlack);
-	TGaxis *axis1 = new TGaxis(2500,1,2500,323000,1,323000,10,"+GLB"); //GLB
-  	axis1->SetName("axis3");
-	axis1->SetLabelSize(0);
-  	axis1->Draw();
-
-	TGaxis *axis2 = new TGaxis(0,323000,2500,323000,0,2500,25,"-LB"); //GLB
-  	axis2->SetName("axis2");
-	axis2->SetLabelSize(0);
-  	axis2->Draw();
+	h3->Write(Form("det-%i",detLoop));
 
 	string runNum = fileName;
 		if (loc==1) runNum = runNum.substr(9,3);
-	c0->SaveAs(Form("run_%s_det-%i_Spectra.pdf",runNum.c_str(),detLoop));
-	// TFile *aa = new TFile("hist.dat","RECREATE");
+		else runNum = runNum.substr(73,3);
+
+    int n = h3->GetNbinsX();
+
+	string outFileName = Form("E_cal_spectras/Spectra_run_%s_det-%i",runNum.c_str(),detLoop);
+	cout << outFileName << endl;
+	ofstream myfile (outFileName.c_str(), ios::out);
+	// ofstream myfile (Form("run_%s_det-%i_Spectra.dat",runNum.c_str(),detLoop),ios::out);
+	if (myfile.is_open()) {
+		for (int i=1; i<=n; i++) {
+			myfile << h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2<<"\t"<<h3->GetBinContent(i)<<"\n";
+			// myfile << Form("%g\t%g\n",h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2,h3->GetBinContent(i));
+	    }
+		myfile.close();
+	}
+	else cout << "something bad\n";
 
 
-	int n = h3->GetNbinsX();
-	FILE *fptr = fopen("hist.dat", "w");
-   	for (int i=1; i<=n; i++) {
-      	fprintf(fptr,"%g\t%g\n",
-				h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2,
-             	h3->GetBinContent(i));
-   }
-   fclose(fptr);
 
-	// h3->Print("all"); > "hist.dat"
-	// aa->Write();
-	// aa->Close();
-
-	// // ATTEMPT TO FIT
-	// try {
-	//
-	// 	string runNum = fileName;
-	// 	if (loc==1) runNum = runNum.substr(9,3);
-	// 	else runNum = runNum.substr(73,3);
-	//
-	//
-	// 	// .Get() returns the contained pointer to TFitResult. Dereference it with "*""
-	// 	TFitResult fitResults = static_cast<TFitResult>(*single_gauss_area_p1(hyield).Get());
-	//
-	// 	// Write out fitResults to current TFile (TFitOut)
-	// 	fitResults.Write(Form("det-%i",detLoop));
-	//
-	// 	area = fitResults.Parameter(3);
-	// 	area_err = fitResults.Error(3);
-	// 	chi2NDF = fitResults.Chi2()/fitResults.Ndf();
-	// 	sig1 = fitResults.Parameter(5);
-	// 	isValid = fitResults.IsValid();
-	// 	status = fitResults.Status();
-	//
-	//
-	// 	// The charge is integrated charge of proton which is 1
-	// 	double yield = area/(charge);
-	// 	double yield_err = area_err/(charge);
-	//
-	// 	string detNum = detector;
-	//
-	// 	// Save time: svg << pdf<< eps << jpg << png
-	// 	// c0->SaveAs(Form("Yields/P1/run_%s/%s_Fit.pdf",runNum.c_str(),detNum.c_str()));
-	// 	c0->SaveAs(Form("run_%s_det-%i_Spectra.pdf",runNum.c_str(),detLoop));
-	//
-	// 	// ofstream myfile;
-	// 	// myfile.open ("Yields/P1/_P1.csv",std::ios::app);
-	// 	// myfile<<Form("run_%s",runNum.c_str())<<","<< Form("%s",detNum.c_str())
-	// 	// 	<<","<<yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<sig1
-	// 	// 	<<","<<chi2NDF<<","<<isValid<<","<<status<<","<<charge<<"\n";
-	// 	// myfile.close();
-	// }catch(...){}
 
 	c0->Clear();
+	delete h3;
 	fyield->Close();
 	delete c0;
 }
@@ -250,8 +146,8 @@ void paperPlotter(){
 	gErrorIgnoreLevel = kWarning;
 
 	// When running on CRC
-	// const char *path = "/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/";
-	// chdir(path);
+	const char *path = "/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/";
+	chdir(path);
 
 	const char *detect;
 	const char *files;
@@ -267,7 +163,7 @@ void paperPlotter(){
 	int upToRun;
 
 	if (loc==1) upToRun = 160;
-	else upToRun = 160;
+	else upToRun = 410;
 
 	for(int i=runStart;i<upToRun;i++){
 
@@ -298,10 +194,10 @@ void paperPlotter(){
 
 
 		// // Save TFitResult results.
-		TFile *ff = new TFile(Form("run_%s.root",runNum_String),"RECREATE");
+		TFile *ff = new TFile(Form("E_cal_spectras/run_%s.root",runNum_String),"RECREATE");
 
 		// Loop through detectors on board
-		for(int j=0;j<1;j++){ // 13
+		for(int j=0;j<13;j++){ // 13
 
 			if (loc==1) files = Form("runs/run%s.root",runNum_String);
 			else files = Form("/afs/crc.nd.edu/group/nsl/activetarget/data/24Mg_alpha_gamma/spectra/run0%d.root",i);
@@ -323,6 +219,7 @@ void paperPlotter(){
 
 		cout << Form("Fitting run_%s complete",runNum_String) << endl;
 		fileNum+=1;
+		delete ff;
 	}
 
 	// Record end time
