@@ -17,38 +17,38 @@ import pandas as pd
 #   2 = all
 verbose = 0
 
-# Read in the data into dataframe
-df1 = pd.read_csv('Yields/P1/_P1.csv')
-df2 = pd.read_csv('Yields/P2/_P2.csv')
-df3 = pd.read_csv('Yields/A1/_A1.csv')
 
 # Read online analysis logbook
-df = pd.read_excel('24MgYields.xlsx',sheet_name='Yields_24Mg_ap')
+df_log = pd.read_excel('24MgYields.xlsx',sheet_name='Yields_24Mg_ap')
+
+channels = ['P1','P2','A1','O17_1','O17_ng']
+for chan in channels:
+
+    # Read in the data into dataframe
+    df = pd.read_csv('Yields/%s/_%s.csv'%(chan.upper(),chan))
 
 
-# Read in efficiencies
-dfeff = pd.read_csv('calibration/csv/detectorEfficiencies.csv')
+    # Read in efficiencies
+    dfeff = pd.read_csv('calibration/csv/detectorEfficiencies.csv')
 
-pRun = df['Run'].values
-pEalpha = df['Ea (keV)'].values
-pEalpha = pEalpha.round(1) # round to 1 decimal point (100s of eV precision)
-
-
-runToEalpha = {pRun[i]:pEalpha[i] for i in range(len(pRun))}
-
-Ealpha = []
-
-for ind, val in df1['Run'].iteritems():
-    val = np.int64(val[4:])
-    Ealpha.append(runToEalpha[val])
+    pRun = df_log['Run'].values
+    pEalpha = df_log['Ea (keV)'].values
+    pEalpha = pEalpha.round(1) # round to 1 decimal point (100s of eV precision)
 
 
-# Append new columns (E alpha) to dataframe, preserving the index
-df1 = df1.assign(Ea=pd.Series(Ealpha,index=df1.index).values)
-df2 = df2.assign(Ea=pd.Series(Ealpha,index=df2.index).values)
-df3 = df3.assign(Ea=pd.Series(Ealpha,index=df3.index).values)
+    runToEalpha = {pRun[i]:pEalpha[i] for i in range(len(pRun))}
 
-df1.to_csv('Yields/P1/p1Yields.csv', sep=',')
-df2.to_csv('Yields/P2/p2Yields.csv', sep=',')
-df3.to_csv('Yields/A1/a1Yields.csv', sep=',')
+    Ealpha = []
+
+    for ind, val in df['Run'].iteritems():
+        val = np.int64(val[4:])
+        Ealpha.append(runToEalpha[val])
+
+
+    # Append new columns (E alpha) to dataframe, preserving the index
+    df = df.assign(Ea=pd.Series(Ealpha,index=df.index).values)
+
+    df.to_csv('Yields/%s/%sYields.csv'%(chan,chan.lower()), sep=',')
+    print('Finished with: %s'%chan)
+
 print('DONE!')

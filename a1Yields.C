@@ -49,11 +49,13 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	const vector < double > &peak2BackLow, const vector < double > &peak2BackHigh,
 	vector < double > &peak1SpecLow, vector < double > &peak1SpecHigh,
 	vector < double > &peak2SpecLow, vector < double > &peak2SpecHigh,
-	double low, double high, int detLoop){
+	double low, double high, int detLoop, TFile *fileToSaveBGSubtractedSpectra){
 
 
 	TFile *fyield = new TFile(fileName);
 	TFile *fbackground = new TFile(fileBack);	// bg spectra
+
+	gSystem->cd("/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/");
 
 	// Get runtime info from root file
 	TVectorD *run_t0 = static_cast<TVectorD*>(fyield->Get("lastTimeStampSeconds-0"));
@@ -222,9 +224,16 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	}
 
 
-	h3->GetXaxis()->SetRangeUser(1000,1500);
+	// h3->GetXaxis()->SetRangeUser(1000,1500);
 	h3->Draw();
-	h3->SetStats(kFALSE);
+	// h3->SetStats(kFALSE);
+
+	// Change the current top directory ( the last open TFile) back to 'ff'
+	// where I would  like to write the histograms
+	fileToSaveBGSubtractedSpectra->cd();
+	h3->Write(Form("det-%i",detLoop));
+
+	h3->GetXaxis()->SetRangeUser(1000,1500);
 
 	a1Peak = single_gauss_area(1368.6,h3); // 1368.63
 
@@ -249,16 +258,16 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 	string detNum = detector;
 
-	c0->SaveAs(Form("Yields/A1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
-	c0->SaveAs(Form("Yields/A1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
+	// c0->SaveAs(Form("Yields/A1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
+	// c0->SaveAs(Form("Yields/A1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
 
-	ofstream myfile;
-	myfile.open ("Yields/A1/_A1.csv",std::ios::app);
-	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
-				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
-				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
-				offset<<","<<charge<<"\n";
-	myfile.close();
+	// ofstream myfile;
+	// myfile.open ("Yields/A1/_A1.csv",std::ios::app);
+	// myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
+	// 			yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
+	// 			goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
+	// 			offset<<","<<charge<<"\n";
+	// myfile.close();
 
 
 	c0->Clear();
@@ -291,12 +300,12 @@ void a1Yields(){
 	const char *files;
 
 	// Prepare structure of data output in CSV file
-	ofstream myfile;
-	myfile.open ("Yields/A1/_A1.csv",std::ios::out);
-	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
-			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
-			<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
-	myfile.close();
+	// ofstream myfile;
+	// myfile.open ("Yields/A1/_A1.csv",std::ios::out);
+	// myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
+	// 		<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
+	// 		<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
+	// myfile.close();
 
 	// BG spectra peak ranges
 	const vector < double >  peak1BackLow ({310,330,330,330,320,340,330,330,330,330,320,310,330});
@@ -348,6 +357,19 @@ void a1Yields(){
 
 		double a1;
 
+
+		TString runNum_TString;
+
+		if(i < 100) runNum_TString = "00";
+		else if((i >= 100) && (i < 1000)) runNum_TString = "0";
+		else runNum_TString = "";
+
+		runNum_TString += i;	// Should be format 0001 -> 9999
+		const char *runNum_String = (const char*)runNum_TString;
+
+		// // Save TFitResult results.
+		TFile *ff = new TFile(Form("E_cal_spectras/bgSubtracted_run_%s.root",runNum_String),"RECREATE");
+
 		// Loop through detectors on board 1 (0-7) and board 2 (8-12)
 		for(int j=0;j<13;j++){ // 13
 
@@ -368,10 +390,17 @@ void a1Yields(){
 			// Perform peak fitting
 			peakFitter(files,fileBackground,detect,peak1BackLow,peak1BackHigh,
 				peak2BackLow,peak2BackHigh,peak1SpecLow,peak1SpecHigh,
-				peak2SpecLow,peak2SpecHigh,a1-50,a1+50,j);
+				peak2SpecLow,peak2SpecHigh,a1-50,a1+50,j,ff);
 		}
+
+		// // Write all TObjects in memory (TFitResult) to TFile
+		ff->Write();
+		ff->Close();
+		// delete h3;
 
 		cout << Form("Fitting %d complete",fileNum) << endl;
 		fileNum+=1;
+
+		delete ff;
 	}
 }

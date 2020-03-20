@@ -1,17 +1,15 @@
-// Sum the highest energy spectras to address referee comment to check for other
-// higher energy gamma-ray transitions
+// Sum all the energy calibrated spectra per detector to address referee
+// comment to check for other higher energy gamma-ray transitions
 
 #include <iostream>
 #include <list>
 
-void sumSpectras(){
+void sumSpectrasALL(){
 
-    std::list<int> listOfRuns({159,160,161,162,167,172,
-                            260,261,262,263,264,265,266,
-                            267,268,269,270,271,272,273,
-                            274,275,278});
+    const char *detect;
+    const char *files;
 
-    TFile *ff = new TFile("E_cal_spectras/summedSpectras.root","RECREATE");
+    TFile *ff = new TFile("E_cal_spectras/summedSpectrasALL.root","RECREATE");
 
     TH1D *h0 = new TH1D("h0","120 deg",8192,0,8192);
     TH1D *h1 = new TH1D("h1","105 deg",8192,0,8192);
@@ -27,10 +25,22 @@ void sumSpectras(){
     TH1D *h11 = new TH1D("h11","-105 deg",8192,0,8192);
     TH1D *h12 = new TH1D("h12","-120 deg",8192,0,8192);
 
-    const char *detect;
-    const char *files;
+    int startRun = 160;
+    int upToRun = 410;
+	for(int run=startRun;run<upToRun;run++){
 
-    for (int val : listOfRuns){
+        // Skip bad runs
+        if(run>=163 && run<=166) continue;
+        else if(run>=168 && run<=171) continue;
+        else if(run==182) continue;
+        else if(run>=244 && run<=255) continue;
+        else if(run==276) continue;
+        else if(run==277) continue;
+        else if(run==285) continue;
+        else if(run==289) continue;
+        else if(run==290) continue;
+        else if(run==294) continue;
+        else if(run==406) continue;
 
         // Create the canvas
         TCanvas *c0 = new TCanvas("c0","c0",1920,1080);
@@ -39,11 +49,11 @@ void sumSpectras(){
         TString runNum_TString;
 
         // Pad the values
-		if(val < 100) runNum_TString = "00";
-		else if((val >= 100) && (val < 1000)) runNum_TString = "0";
+		if(run < 100) runNum_TString = "00";
+		else if((run >= 100) && (run < 1000)) runNum_TString = "0";
 		else runNum_TString = "";
 
-        runNum_TString += val;	// Should be format 0001 -> 9999
+        runNum_TString += run;	// Should be format 0001 -> 9999
 
         // Cast to const char*
 		const char *runNum_String = (const char*)runNum_TString;
@@ -75,22 +85,6 @@ void sumSpectras(){
         delete fyield;
         delete c0;
     }
-
-    // Create the canvas
-    // TCanvas *c0 = new TCanvas("c0","c0",1920,1080);
-    // c0->Update();
-    // gPad->SetLogy();
-    // h0->Draw();
-    //
-    // TCanvas *c1 = new TCanvas("c1","c1",1920,1080);
-    // c1->Update();
-    // gPad->SetLogy();
-    // h1->Draw();
-    //
-    // TCanvas *c2 = new TCanvas("c2","c2",1920,1080);
-    // c2->Update();
-    // gPad->SetLogy();
-    // h2->Draw();
 
     // // // Write all TObjects in memory (TFitResult) to TFile
     ff->Write();

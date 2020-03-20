@@ -222,12 +222,11 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	}
 
 
-
 	h3->GetXaxis()->SetRangeUser(600,1200);
 	h3->Draw();
 	h3->SetStats(kFALSE);
 
-	p1Peak = double_gauss_area_p1(843.8,867.7,h3,detLoop); // 843.76
+	p1Peak = double_gauss_area_p1(843.8,870.7,h3,detLoop); // 843.76, 867.7
 
 	area = p1Peak[0];
 	area_err = p1Peak[1];
@@ -251,7 +250,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	string detNum = detector;
 
   // nt n = h3->GetNbinsX();
-  // ILE *fptr = fopen(Form("histSubCal_0%s_%s.dat",runNum.c_str(),detNum.c_str()), "w");
+  // FILE *fptr = fopen(Form("histSubCal_0%s_%s.dat",runNum.c_str(),detNum.c_str()), "w");
   // or (int i=1; i<=n; i++) {
   // fprintf(fptr,"%g\t%g\n",
   // 		h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2,
@@ -270,8 +269,8 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
   // }
   // fclose(fptr);
 
-	// c0->SaveAs(Form("Yields/P1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
-	// c0->SaveAs(Form("Yields/P1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
+	c0->SaveAs(Form("Yields/P1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
+	c0->SaveAs(Form("Yields/P1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
 
 
 	ofstream myfile;

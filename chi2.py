@@ -108,10 +108,9 @@ def chi2_det(data,data_unc,order):
 """
 MATRIX METHOD, INCLUDING ERRORS OF PARAMETERS
 """
-def chi2_mat(data,data_unc,order):
+def chi2_mat(data,data_unc,angle,order):
 
-    angles = np.radians([0,15,30,45,60,75,90])
-    x = np.cos(angles)
+    x = np.cos(angle)
     weights = np.array([1/data_unc[i]**2 for i in range(len(data))])
     # weights = np.array([1/data_unc[i]**2 for i in range(7)])
 
@@ -122,6 +121,8 @@ def chi2_mat(data,data_unc,order):
     legCoef = np.zeros(dim)
 
     rank = order+1
+
+    # print(weights.shape,data.shape,dim,rank)
 
     # Store array objects in the indices
     legDeriv_a = np.zeros(rank,dtype=object)
@@ -197,37 +198,57 @@ def chi2_mat(data,data_unc,order):
     # Pop the last 0 that is unnecessary
     new.pop()
 
-    temp1 = data-np.polynomial.legendre.legval(x,new)
-    temp2 = np.multiply(temp1**2,weights)
+
+
+    # Calculate errors for each coefficient from error matrix and store in list
+    # Variances are diagonal terms of covariance (error matrix)
+    # Errors are sqrt of that
+    for ind in range(rank):
+        a_errs[ind] = alpha_pinv[ind][ind]  # Store the variances of each parameter
+    a_errs = np.sqrt(a_errs)
+
+
+    # Calculate chi2 and chi2ndf
+    model = np.polynomial.legendre.legval(x,new)
+    model_err = 0
+    lstSqCostFunc = (data - model)**2
+    ##### WRONG, need to weigh the cost fucntion by the error in the model
+    temp2 = np.multiply(lstSqCostFunc,weights)
     chi2 = np.sum(temp2)
-
-
     chi2ndf = chi2/(len(data)-rank)
 
 
-    """
-    # Calculate errors for each coefficient from error matrix and store in list
-    """
-    for row in range(rank):
-        a_var_temp = 0
-        for col in range(rank):
-            if row == col:
-                a_var_temp += alpha_pinv[row][col]
-            # else:
-            #     a_var_temp += 2*alpha_pinv[row][col]
-
-        # Used if encountering a negative value. investigate this some more
-        try:
-            a_errs[row] = np.sqrt(a_var_temp)
-        # except RuntimeWarning as err:
-        except Exception:
-            print('A problem was encountered:')
-            a_errs[row] = 0
+    # temp1 = data-np.polynomial.legendre.legval(x,new)
+    # temp2 = np.multiply(temp1**2,weights)
+    # chi2 = np.sum(temp2)
+    #
+    #
+    # chi2ndf = chi2/(len(data)-rank)
+    #
+    #
+    # """
+    # # Calculate errors for each coefficient from error matrix and store in list
+    # """
+    # for row in range(rank):
+    #     a_var_temp = 0
+    #     for col in range(rank):
+    #         if row == col:
+    #             a_var_temp += alpha_pinv[row][col]
+    #         # else:
+    #         #     a_var_temp += 2*alpha_pinv[row][col]
+    #
+    #     # Used if encountering a negative value. investigate this some more
+    #     try:
+    #         a_errs[row] = np.sqrt(a_var_temp)
+    #     # except RuntimeWarning as err:
+    #     except Exception:
+    #         print('A problem was encountered:')
+    #         a_errs[row] = 0
 
     # print('\nErr:\n',a_errs)
 
     # Calculate p-value
-    pVal = pValue(len(angles),rank,chi2)
+    pVal = pValue(len(angle),rank,chi2)
 
     results = [aCoef_matrix,a_errs,chi2,chi2ndf,pVal]
 

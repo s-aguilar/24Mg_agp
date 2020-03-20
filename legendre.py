@@ -105,7 +105,7 @@ for ch in channels:
     chan = dict_channels[ch]
 
     # is in Lab energy, convert to center-of-mass
-    energyCM_chan = chan['Energy'].values*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
+    energyCM_chan = chan['Energy'].values#*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
     chan = chan.assign(E_CM=pd.Series(energyCM_chan,index=chan.index).values)
     # print(chan.head())
     angle_chan = chan['Angle'].values
@@ -171,7 +171,7 @@ for ch in channels:
         # -- a0, a0+a2, ... , a0+a2+a4+a6+a8+a10
         for ind in range(0,leg_ord+1):
 
-            results = chi2_mat(masked_cross_chan,masked_err_chan,ind)
+            results = chi2_mat(masked_cross_chan,masked_err_chan,masked_ang_chan,ind)
 
             dict_ord_a[str(legendre_order[ind][-1])].append(results[0])#*37/1e6 * 1/23.985*6.022e23*1/1e-24)
             dict_ord_err_a[str(legendre_order[ind][-1])].append(results[1])#*37/1e6 * 1/23.985*6.022e23*1/1e-24)
@@ -183,17 +183,19 @@ for ch in channels:
                 # Note: The legendre.legval function requires the coefficients
                 # of all terms up to whatever order you want, must pad the even
                 # terms with 0's, this is done through the 'convert' function
-                temp_coef = convert(results[0]) #* 37/1e6 * 1/23.985*6.022e23*1/1e-24
-                temp_coef_err = convert(results[1]) #*  37/1e6 * 1/23.985*6.022e23*1/1e-24
+                temp_coef = convert(results[0])
+                temp_coef_err = convert(results[1])
 
                 # Recording points of some angular distributions
                 # # if nrg == 4.30930:
                 # if nrg < 4.962 and nrg > 4.96:
-                #     print(ch,legendre_order[ind],nrg)
-                #     # df = pd.DataFrame(data=np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=ang_knots,columns=['legVal'])
-                #     df = pd.DataFrame(data=ang_knots,columns=['angle'])
-                #     df = df.assign(legVal=pd.Series(np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=df.index).values)
-                #     df.to_excel('legendre_out/DATA/analytically/%s/a%d/%s_a%d_legendrePointsAtSingleEnergy.xlsx'%(ch,legendre_order[ind][-1],ch,legendre_order[ind][-1]))
+                # # if nrg == 3.70150:
+                if nrg < 3.702 and nrg > 3.700:
+                    print(ch,legendre_order[ind],nrg)
+                    # df = pd.DataFrame(data=np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=ang_knots,columns=['legVal'])
+                    df = pd.DataFrame(data=ang_knots,columns=['angle'])
+                    df = df.assign(legVal=pd.Series(np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=df.index).values)
+                    df.to_excel('legendre_out/DATA/analytically/%s/a%d/%s_a%d_legendrePointsAtSingleEnergy.xlsx'%(ch,legendre_order[ind][-1],ch,legendre_order[ind][-1]))
 
                 # Scatter has bug when the y-values are small, the y-axis does not autoscale
                 # plt.scatter(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],s=8,label='%d'%legendre_order[ind][-1])
@@ -307,7 +309,8 @@ for ch in channels:
             else:
                 print('Problem at Ep:',energyList[loop])
 
-
+    continue
+    ############################################################################################################################################
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.
 
