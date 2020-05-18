@@ -76,23 +76,7 @@ void sumSpectras(){
         delete c0;
     }
 
-    // Create the canvas
-    // TCanvas *c0 = new TCanvas("c0","c0",1920,1080);
-    // c0->Update();
-    // gPad->SetLogy();
-    // h0->Draw();
-    //
-    // TCanvas *c1 = new TCanvas("c1","c1",1920,1080);
-    // c1->Update();
-    // gPad->SetLogy();
-    // h1->Draw();
-    //
-    // TCanvas *c2 = new TCanvas("c2","c2",1920,1080);
-    // c2->Update();
-    // gPad->SetLogy();
-    // h2->Draw();
-
-    // // // Write all TObjects in memory (TFitResult) to TFile
+    // Write all TObjects in memory (TFitResult) to TFile
     ff->Write();
     delete h0;
     delete h1;

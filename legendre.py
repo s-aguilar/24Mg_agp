@@ -58,8 +58,15 @@ _c = 2.99792458E10          # cm / s
 _u = 931.494/_c**2          # MeV / c^2
 _NA = 6.02214E23            # particles / mol
 
-
 rxnRateCONST = _barnsTocm2 * _NA * (8/(np.pi*_u))**.5 * (8.617E-2)**-1.5
+
+# target info
+thickness = 34.87/(1e6)                        # 34.87ug/cm^2 converted to g/cm^2
+numOfTarget = thickness*(1/23.985)*6.022e23     # thickness * (mol/23.985 g) * N_a
+barn_conv = 1/(1e-24)
+
+# Factor to convert lab to CM energy
+labToCM = (_m24Mg/(_m24Mg+_m4He))
 
 
 def convert(old):
@@ -89,10 +96,11 @@ a1 = pd.read_table('rMatrix/24Mg_rMatrix_a1.dat',names=colNames)
 
 dict_channels = {'p1':p1,'p2':p2,'a1':a1}
 
+
+
 # If plot is 0 then no plotting, any other value it will generate the plots
 # 'a' for analytic solution plots
-plot_a = 0
-
+plot_a = 1
 
 # Perform the analysis over all the channels
 channels = ['p1','p2','a1']
@@ -104,13 +112,12 @@ for ch in channels:
 
     chan = dict_channels[ch]
 
-    # is in Lab energy, convert to center-of-mass
-    energyCM_chan = chan['Energy'].values#*(_m24Mg/(_m24Mg+_m4He))   # Now its in E_cm
-    chan = chan.assign(E_CM=pd.Series(energyCM_chan,index=chan.index).values)
-    # print(chan.head())
-    angle_chan = chan['Angle'].values
-    cross_chan = chan['Cross-section'].values
-    crossErr_chan = chan['Error'].values
+    # Convert lab to CM energy
+    energyCM_chan = chan['Energy'].to_numpy()*labToCM   # Now its in E_cm
+    chan = chan.assign(E_CM=pd.Series(energyCM_chan,index=chan.index).to_numpy())
+    angle_chan = chan['Angle'].to_numpy()
+    cross_chan = chan['Cross-section'].to_numpy()
+    crossErr_chan = chan['Error'].to_numpy()
 
 
     legendre_order = [[0],[0,2],[0,2,4],[0,2,4,6],[0,2,4,6,8],[0,2,4,6,8,10]]
@@ -138,26 +145,20 @@ for ch in channels:
     temp_nrg = set()
     energyList = np.array([x for x in energyCM_chan if not (x in temp_nrg or temp_nrg.add(x))],dtype=np.float64)
 
-    # print(energyList)
-
-    # perform Legendre fit over the angular distribution at each energy
+    # Perform Legendre fit over the angular distribution at each energy
     for nrg in energyList:
         # is_nrg = chan['Energy']==nrg      # create boolean mask for lab energies
         # chan_temp = chan[is_nrg]
         is_nrg = chan['E_CM']==nrg      # create boolean mask
         chan_temp = chan[is_nrg]
 
-        # print(nrg)
 
         # Energy is in center-of-mass
-        masked_nrg_chan = chan_temp['E_CM'].values
-        masked_ang_chan = np.radians(chan_temp['Angle'].values)
-        masked_cross_chan = chan_temp['Cross-section'].values
-        masked_err_chan = chan_temp['Error'].values
+        masked_nrg_chan = chan_temp['E_CM'].to_numpy()
+        masked_ang_chan = np.radians(chan_temp['Angle'].to_numpy())
+        masked_cross_chan = chan_temp['Cross-section'].to_numpy()
+        masked_err_chan = chan_temp['Error'].to_numpy()
 
-        # # Debugging diving by 0 errors ( only in p1 file, 90deg detector, lowest energy 3.99MeV, fixed manually)
-        # for blah in range(len(masked_err_chan)):
-        #     print(masked_nrg_chan[blah],'\t',masked_ang_chan[blah],'\t',masked_err_chan[blah]) #### TESTING IN/outputs
 
         temp_weights = [1/_**2 for _ in masked_err_chan]
         ang_knots = np.radians(np.linspace(0,90,91)) # RADIANSIFIED
@@ -173,8 +174,8 @@ for ch in channels:
 
             results = chi2_mat(masked_cross_chan,masked_err_chan,masked_ang_chan,ind)
 
-            dict_ord_a[str(legendre_order[ind][-1])].append(results[0])#*37/1e6 * 1/23.985*6.022e23*1/1e-24)
-            dict_ord_err_a[str(legendre_order[ind][-1])].append(results[1])#*37/1e6 * 1/23.985*6.022e23*1/1e-24)
+            dict_ord_a[str(legendre_order[ind][-1])].append(results[0])
+            dict_ord_err_a[str(legendre_order[ind][-1])].append(results[1])
             dict_ord_x2_a[str(legendre_order[ind][-1])].append(results[2])
             dict_ord_x2ndf_a[str(legendre_order[ind][-1])].append(results[3])
             dict_ord_pVal_a[str(legendre_order[ind][-1])].append(results[4])
@@ -190,12 +191,38 @@ for ch in channels:
                 # # if nrg == 4.30930:
                 # if nrg < 4.962 and nrg > 4.96:
                 # # if nrg == 3.70150:
-                if nrg < 3.702 and nrg > 3.700:
-                    print(ch,legendre_order[ind],nrg)
-                    # df = pd.DataFrame(data=np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=ang_knots,columns=['legVal'])
-                    df = pd.DataFrame(data=ang_knots,columns=['angle'])
-                    df = df.assign(legVal=pd.Series(np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=df.index).values)
-                    df.to_excel('legendre_out/DATA/analytically/%s/a%d/%s_a%d_legendrePointsAtSingleEnergy.xlsx'%(ch,legendre_order[ind][-1],ch,legendre_order[ind][-1]))
+
+                if ch == 'p1':
+                    if nrg < 4.133 and nrg > 4.131:
+                        print(ch,legendre_order[ind],nrg)
+                        # df = pd.DataFrame(data=np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=ang_knots,columns=['legVal'])
+                        df = pd.DataFrame(data=ang_knots,columns=['angle'])
+                        df = df.assign(legVal=pd.Series(np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=df.index).to_numpy())
+                        df.to_excel('legendre_out/DATA/%s/a%d/%s_a%d_legendrePointsAtSingleEnergy.xlsx'%(ch,legendre_order[ind][-1],ch,legendre_order[ind][-1]))
+
+                        # Save data points
+                        masked_yield_chan = masked_cross_chan#*numOfTarget/barn_conv
+                        masked_yerr_chan = masked_err_chan#*numOfTarget/barn_conv
+                        dff = pd.DataFrame(data=masked_ang_chan*180/np.pi,columns=['angle'])
+                        dff = dff.assign(data=pd.Series(masked_yield_chan,index=dff.index).to_numpy())
+                        dff = dff.assign(dataErr=pd.Series(masked_yerr_chan,index=dff.index).to_numpy())
+                        dff.to_excel('legendre_out/DATA/%s/%s_dataPointsAtSingleEnergy.xlsx'%(ch,ch))
+
+                if ch == 'p2':
+                    if nrg < 3.712 and nrg > 3.711:
+                        print(ch,legendre_order[ind],nrg)
+                        # df = pd.DataFrame(data=np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=ang_knots,columns=['legVal'])
+                        df = pd.DataFrame(data=ang_knots,columns=['angle'])
+                        df = df.assign(legVal=pd.Series(np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),index=df.index).to_numpy())
+                        df.to_excel('legendre_out/DATA/%s/a%d/%s_a%d_legendrePointsAtSingleEnergy.xlsx'%(ch,legendre_order[ind][-1],ch,legendre_order[ind][-1]))
+
+                        # Save data points
+                        masked_yield_chan = masked_cross_chan#*numOfTarget/barn_conv
+                        masked_yerr_chan = masked_err_chan#*numOfTarget/barn_conv
+                        dff = pd.DataFrame(data=masked_ang_chan*180/np.pi,columns=['angle'])
+                        dff = dff.assign(data=pd.Series(masked_yield_chan,index=dff.index).to_numpy())
+                        dff = dff.assign(dataErr=pd.Series(masked_yerr_chan,index=dff.index).to_numpy())
+                        dff.to_excel('legendre_out/DATA/%s/%s_dataPointsAtSingleEnergy.xlsx'%(ch,ch))
 
                 # Scatter has bug when the y-values are small, the y-axis does not autoscale
                 # plt.scatter(ang_knots,np.polynomial.legendre.legval(np.cos(ang_knots),temp_coef),c=color_order[ind],s=8,label='%d'%legendre_order[ind][-1])
@@ -212,6 +239,10 @@ for ch in channels:
             plt.legend(prop={'size': 14})
             plt.savefig('legendre_out/fits/%s/%5.4fMeVFit.png'%(ch,nrg),dpi=300)
             plt.clf()
+
+    continue####
+
+
 
 
     # Convert lists into arrays
@@ -258,9 +289,9 @@ for ch in channels:
         df = pd.DataFrame(data=stuff,index=energyList,columns=colLabels[0:_+1])
         df1 =  pd.DataFrame(data=stuff2,index=energyList,columns=colLabelss[0:_+1])
         df = pd.concat([df, df1], axis=1, sort=False)
-        df = df.assign(Chi2=pd.Series(dict_ord_x2_a[str(legendre_order[_][-1])],index=df.index).values)
-        df = df.assign(Pval=pd.Series(dict_ord_pVal_a[str(legendre_order[_][-1])],index=df.index).values)
-        df = df.assign(Chi2NDF=pd.Series(dict_ord_x2ndf_a[str(legendre_order[_][-1])],index=df.index).values)
+        df = df.assign(Chi2=pd.Series(dict_ord_x2_a[str(legendre_order[_][-1])],index=df.index).to_numpy())
+        df = df.assign(Pval=pd.Series(dict_ord_pVal_a[str(legendre_order[_][-1])],index=df.index).to_numpy())
+        df = df.assign(Chi2NDF=pd.Series(dict_ord_x2ndf_a[str(legendre_order[_][-1])],index=df.index).to_numpy())
         df.to_csv('legendre_out/DATA/%s/a%d/%s_a%dFit.csv'%(ch,legendre_order[_][-1],ch,legendre_order[_][-1]))
         df.to_excel('legendre_out/DATA/%s/a%d/%s_a%dFit.xlsx'%(ch,legendre_order[_][-1],ch,legendre_order[_][-1]))
     # """
@@ -287,11 +318,18 @@ for ch in channels:
         order.append(str(legendre_order[2][-1]))
 
 
+    # # Sort by energy, keeping others consistent!
+    # ind = energyList.argsort()
+    # energyList = energyList[ind]
+    # a0_final = a0_final[ind]
+    # a0_err_final = a0_err_final[ind]
+
+
     # Save the points
     df = pd.DataFrame(data=a0_final,index=energyList)
-    df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).values)
-    df = df.assign(Pval=pd.Series(p_final,index=df.index).values)
-    df = df.assign(Order=pd.Series(order,index=df.index).values)
+    df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).to_numpy())
+    df = df.assign(Pval=pd.Series(p_final,index=df.index).to_numpy())
+    df = df.assign(Order=pd.Series(order,index=df.index).to_numpy())
     df.to_excel('legendre_out/DATA/%s/%sFits.xlsx'%(ch,ch))
 
     # Save angle integrated cross section for rMatrix
@@ -304,12 +342,11 @@ for ch in channels:
         # exit()
         for loop in range(len(energyList)):
             if cross[loop] > 0 and cross_err[loop] > 0 and cross_err[loop] < cross[loop]:
-                printOut= '%f \t %d \t %.8f \t %.8f \n' %(energyList[loop],0,cross[loop],cross_err[loop])
+                printOut= '%f \t %d \t %.8E \t %.8E \n' %(energyList[loop],0,cross[loop],cross_err[loop])
                 f.write(printOut)
             else:
                 print('Problem at Ep:',energyList[loop])
 
-    continue
     ############################################################################################################################################
     # Now spline the 'a0' coefficients and plot as function of energy and overlay
     # the original 'a0' coefficents and make sure the splining is done well.
@@ -338,7 +375,7 @@ for ch in channels:
 
     if ch == 'p1':
         # e_mask1 = energyList >= 3.745
-        e_mask1 = energyList >= 3.745
+        e_mask1 = energyList >= 3.74
 
 
         interior1 = energyList[e_mask1]
@@ -359,8 +396,8 @@ for ch in channels:
         y_val1 = spline1(e1spline_x)
 
     elif ch == 'p2':
-        e_mask1 = energyList <= 3.459
-        e_mask2 = energyList >= 3.67
+        e_mask1 = energyList <= 3.6     #3.459
+        e_mask2 = energyList >= 3.67    #3.67
         interior1 = energyList[e_mask1]
         e1spline_x = np.linspace(min(interior1),max(interior1),100)
 
@@ -391,7 +428,7 @@ for ch in channels:
 
     plt.plot(e1spline_x,y_val1,c='b',label='Cubic Spline')
     plt.errorbar(energyList[e_mask1],a0_final[e_mask1]*solidAngle,yerr=a0_err_final[e_mask1]*solidAngle,fmt='.',c='k')
-    if ch == 'p2':
+    if ch == 'p2' or ch == 'a1':
         plt.plot(e2spline_x,y_val2,c='b')
         plt.errorbar(energyList[e_mask2],a0_final[e_mask2]*solidAngle,yerr=a0_err_final[e_mask2]*solidAngle,fmt='.',c='k')
 
@@ -408,8 +445,8 @@ for ch in channels:
 
     # Save the points
     df = pd.DataFrame(data=a0_final,index=energyList,columns=['a0'])
-    df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).values)
-    df = df.assign(fitOrder=pd.Series(order,index=df.index).values)
+    df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).to_numpy())
+    df = df.assign(fitOrder=pd.Series(order,index=df.index).to_numpy())
     df.to_excel('legendre_out/DATA/%s/%sCrossPoints.xlsx'%(ch,ch))
 
     # Splined CrossSection, first merge the splines
@@ -420,7 +457,7 @@ for ch in channels:
         yvals = np.ma.concatenate([y_val1,y_val2])
         xvals = np.ma.concatenate([e1spline_x,e2spline_x])
     df = pd.DataFrame(data=xvals,columns=['splineX'])
-    df = df.assign(splineY=pd.Series(yvals,index=df.index).values)
+    df = df.assign(splineY=pd.Series(yvals,index=df.index).to_numpy())
     df.to_excel('legendre_out/DATA/%s/%sSplinePoints.xlsx'%(ch,ch))
 
 
@@ -460,7 +497,7 @@ for ch in channels:
         spline1 = LSQUnivariateSpline(E1,integrand[e_mask1], t = knots1, w = weights1)
         y_val1 = spline1(e1spline_x)
 
-        if ch == 'p2':
+        if ch == 'p2' or ch == 'a1':
             E2 = energyList[e_mask2]
             weights2 = 1/integrand_err[e_mask2]            # 1/sigma
 
@@ -484,7 +521,7 @@ for ch in channels:
 
         # plt.xlim(0,10)
         plt.errorbar(E[e_mask1],integrand[e_mask1],yerr=integrand_err[e_mask1],fmt='.',c='k')
-        if ch == 'p2':
+        if ch == 'p2' or ch == 'a1':
             plt.errorbar(E[e_mask2],integrand[e_mask2],yerr=integrand_err[e_mask2],fmt='.',c='k')
             plt.plot(e2spline_x,y_val2,c='b',label='Cubic Spline')
         plt.yscale('log')
@@ -492,8 +529,8 @@ for ch in channels:
         plt.xlabel('E$_{CM}$ (MeV)',fontsize=14)
         plt.title('%s - Integrand at %fGK'%(ch,T),fontsize=20)
         plt.legend()
-        filenames.append('%s_DataReactionRate_integrand_at_%fGK.png'%(ch,T))
-        # plt.savefig('%s_DataReactionRate_integrand_at_%fGK.png'%(ch,T),dpi=300)
+        filenames.append('images/%s_DataReactionRate_integrand_at_%fGK.png'%(ch,T))
+        plt.savefig('images/%s_DataReactionRate_integrand_at_%fGK.png'%(ch,T),dpi=300)
         # plt.show()
 
         if ch == 'p1':
@@ -503,23 +540,23 @@ for ch in channels:
             yvals = np.ma.concatenate([y_val1,y_val2])
             xvals = np.ma.concatenate([e1spline_x,e2spline_x])
         df = pd.DataFrame(data=xvals,columns=['splineX'])
-        df = df.assign(splineY=pd.Series(yvals,index=df.index).values)
+        df = df.assign(splineY=pd.Series(yvals,index=df.index).to_numpy())
         df.to_excel('legendre_out/DATA/%s/%sIntegrandSplinePoints%f.xlsx'%(ch,ch,T))
 
 
         integrand_x = E[e_mask1]
         integrand_y = integrand[e_mask1]
-        if ch == 'p2':
+        if ch == 'p2' or ch == 'a1':
             integrand_x = np.ma.concatenate( [integrand_x,E[e_mask2]] )
             integrand_y = np.ma.concatenate( [integrand_y,integrand[e_mask2]] )
 
         df = pd.DataFrame(data=integrand_x,columns=['integrand_x'])
-        df = df.assign(integrand_y=pd.Series(integrand_y,index=df.index).values)
+        df = df.assign(integrand_y=pd.Series(integrand_y,index=df.index).to_numpy())
         df.to_excel('legendre_out/DATA/%s/%sIntegrandDataPoints%f.xlsx'%(ch,ch,T))
 
 
         intg = spline1.integral(min(E1),max(E1))
-        if ch == 'p2':
+        if ch == 'p2' or ch == 'a1':
             intg += spline2.integral(min(E2),max(E2))
 
 
@@ -536,11 +573,11 @@ for ch in channels:
             tempdf.to_excel(writer,sheet_name=tempNames[ind])
 
 
-    # import imageio
-    # images = []
-    # for filename in filenames:
-    #     images.append(imageio.imread(filename))
-    # imageio.mimsave('legendre_out/%s_data_integrand.gif'%ch, images,duration=1)
+    import imageio
+    images = []
+    for filename in filenames:
+        images.append(imageio.imread(filename))
+    imageio.mimsave('legendre_out/%s_data_integrand.gif'%ch, images,duration=1)
 
 
     plt.clf()
@@ -552,10 +589,10 @@ for ch in channels:
     plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)',fontsize=14)
     plt.xlabel('Temperature (T9)',fontsize=14)
     plt.title('%s - Reaction Rate'%ch,fontsize=20)
-    plt.savefig('%s_DataReactionRate_integrate.png'%ch,dpi=300)
+    plt.savefig('images/%s_DataReactionRate_integrate.png'%ch,dpi=300)
     plt.clf()
     df = pd.DataFrame(data=temperature,index=temperature,columns=['T9'])
-    df = df.assign(Rate=pd.Series(rxnRate,index=df.index).values)
+    df = df.assign(Rate=pd.Series(rxnRate,index=df.index).to_numpy())
     df.to_csv('legendre_out/DATA/%s/a%d/%s_rates.csv'%(ch,legendre_order[0][-1],ch))
     df.to_excel('legendre_out/DATA/%s/a%d/%s_rates.xlsx'%(ch,legendre_order[0][-1],ch))
 

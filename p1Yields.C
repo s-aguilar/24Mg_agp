@@ -307,7 +307,7 @@ void p1Yields(){
 	chdir(path);
 
 	// Background Spectrum file
-	const char *fileBackground = "calibration/background/run0422.root";
+	const char *fileBackground = "calibration/background/run0424.root"; //422 short BG run
 
 	const char *detect;
 	const char *files;

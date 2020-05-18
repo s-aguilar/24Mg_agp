@@ -283,6 +283,13 @@ for ch in channels:
         order.append(str(legendre_order[2][-1]))
 
 
+    # # Sort by energy, keeping others consistent!
+    # ind = energyList.argsort()
+    # energyList = energyList[ind]
+    # a0_final = a0_final[ind]
+    # a0_err_final = a0_err_final[ind]
+
+
     # Save the points
     df = pd.DataFrame(data=a0_final,index=energyList)
     df = df.assign(a0err=pd.Series(a0_err_final,index=df.index).to_numpy())

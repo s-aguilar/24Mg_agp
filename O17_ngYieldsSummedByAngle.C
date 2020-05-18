@@ -76,7 +76,7 @@ void peakFitter(const char *fileName, const char *fileBack,
 
 	double O17_ng;
 	const char *detect;
-	
+
 	double a = 0;
 	double b = 0;
 	double a_gm = 0;

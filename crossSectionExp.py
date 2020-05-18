@@ -55,9 +55,9 @@ norm105 = .87
 norm120 = .81
 
 
-thickness = 37/(1e6)                        # 37ug/cm^2 converted to g/cm^2
+thickness = 34.87/(1e6)                        # 37ug/cm^2 converted to g/cm^2
 numOfTarget = thickness*(1/23.985)*6.022e23     # thickness * (mol/23.985 g) * N_a
-numOfTarget=1 ###############################################################################################################################################################
+# numOfTarget=1 ###############################################################################################################################################################
 q_e = 1.6022e-19
 scale = 1e-8    # 10^-8 C/pulse
 q_corr = scale/(2*q_e)
@@ -65,7 +65,8 @@ barn_conv = 1/(1e-24)
 solidAngle = 4*np.pi
 
 
-channels = ['P1','P2','A1','O17_1','O17_ng']
+channels = ['P1','P2','A1']
+# channels = ['P3']
 # channels = ['O17_1','O17_ng']
 for chan in channels:
 
@@ -88,11 +89,14 @@ for chan in channels:
     Angle = dfeff['Angle'].to_numpy()
 
     # Let the O17_1 (P1 buddy peak) be same efficiency as P1
-    if (chan != 'O17_1' and chan != 'O17_ng'):
+    if (chan != 'O17_1' and chan != 'O17_ng' and chan != 'P3'):
         eff = dfeff['%s'%chan.lower()].to_numpy()
     elif (chan == 'O17_1'):
         eff = dfeff['p1'].to_numpy()
     elif (chan == 'O17_ng'):
+        # eff = np.ones_like(dfeff['p1'].to_numpy())
+        eff = dfeff['a1'].to_numpy()
+    elif (chan == 'P3'):
         # eff = np.ones_like(dfeff['p1'].to_numpy())
         eff = dfeff['a1'].to_numpy()
 
@@ -104,12 +108,11 @@ for chan in channels:
     chanYield = df['Yield'].to_numpy() / q_corr
     chanYield_err = df['Yield err'].to_numpy() / q_corr
 
-    chanYield_effcor = chanYield / eff
-    chanYield_err_effcor = chanYield_err / eff
+    chanYield_effcor = chanYield / eff / solidAngle
+    chanYield_err_effcor = chanYield_err / eff / solidAngle
 
-    chanCross = chanYield_effcor / numOfTarget #* barn_conv / solidAngle############################################################################
-    chanCross_err = chanYield_err_effcor / numOfTarget #* barn_conv / solidAngle####################################################################
-
+    chanCross = chanYield_effcor / numOfTarget * barn_conv
+    chanCross_err = chanYield_err_effcor / numOfTarget * barn_conv
     chanFit = df['Fit Status'].to_numpy()
     chanEalpha = df['Ea'].to_numpy()/1000    # Convert keV to MeV
 
@@ -248,7 +251,7 @@ for chan in channels:
         # plt.plot(_chanEalpha,_chanCross)
         plt.errorbar(_chanEalpha,_chanCross,yerr=_chanCross_err,fmt='b.',markersize='2')
         plt.yscale('log')
-        plt.ylim(1e6,1e10)
+        # plt.ylim(1e-6,1e-1)
         plt.xlim(4,5.6)
         plt.xlabel('$E_{\\alpha}$ (MeV)', fontsize=14)
         plt.ylabel('Differential Cross-Section (barns/sr)', fontsize=14)

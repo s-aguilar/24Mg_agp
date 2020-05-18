@@ -25,7 +25,7 @@ dfp0 = pd.read_table('rMatrix/AZUREOut_aa=2_R=1_angInt.extrap',sep='\s+',names=c
 dfp1 = pd.read_table('rMatrix/AZUREOut_aa=2_R=3_angInt.extrap',sep='\s+',names=colNames)
 dfp2 = pd.read_table('rMatrix/AZUREOut_aa=2_R=4_angInt.extrap',sep='\s+',names=colNames)
 
-fname = 'rate_Temps.dat'
+fname = 'iliadis_Temps.dat' #rate_Temps
 temperature = np.loadtxt( fname )
 
 # Reduced mass
@@ -109,7 +109,7 @@ for ch in channels:
     plt.ylim(1e-30,1e8)
     plt.ylabel('Reaction Rate (cm$^3$ mol$^{-1}$ s$^{-1}$)')
     plt.xlabel('Temperature (T9)')
-    plt.savefig('%s_ReactionRate_azureAngleIntegrated.png'%ch,dpi=900)
+    plt.savefig('images/%s_ReactionRate_azureAngleIntegrated.png'%ch,dpi=900)
 
     plt.clf()
 
