@@ -176,7 +176,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 		// Found the lines update their ranges run by run
 		fLow[detLoop] = fPosition[1];
-		fLow[detLoop] = fPosition[2];
+		fHigh[detLoop] = fPosition[2];
 
 		vector < double > calibrators;
 
@@ -313,12 +313,12 @@ void p2Yields(){
 	vector < double >  peak2SpecHigh ({1360,1480,1510,1485,1440,1510,1480,1500,1480,1510,1530,1490,1490});
 
 
-		// Make directory to visually inspect the fits
-		for(int ii = 0; ii<13; ii++){
-			try {
-				gSystem->Exec(Form("mkdir Yields/P2/det-%i",ii));
-			}catch(...){}
-		}
+	// Make directory to visually inspect the fits
+	for(int ii = 0; ii<13; ii++){
+		try {
+			gSystem->Exec(Form("mkdir Yields/P2/det-%i",ii));
+		}catch(...){}
+	}
 
 
 	// Loop through runs: 159-410

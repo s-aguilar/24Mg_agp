@@ -176,7 +176,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 		// Found the lines, update their ranges run by run
 		fLow[detLoop] = fPosition[1];
-		fLow[detLoop] = fPosition[2];
+		fHigh[detLoop] = fPosition[2];
 
 		vector < double > calibrators;
 
@@ -249,28 +249,8 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 	string detNum = detector;
 
-  // nt n = h3->GetNbinsX();
-  // FILE *fptr = fopen(Form("histSubCal_0%s_%s.dat",runNum.c_str(),detNum.c_str()), "w");
-  // or (int i=1; i<=n; i++) {
-  // fprintf(fptr,"%g\t%g\n",
-  // 		h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2,
-  // 		h3->GetBinContent(i));
-  //  }
-  //  fclose(fptr);
-  //
-  //  h3 = calibrate2(a_cal,b_cal,h3,hyield);
-  //
-  //  n = h3->GetNbinsX();
-  //  fptr = fopen(Form("histRawCal_0%s_%s.dat",runNum.c_str(),detNum.c_str()), "w");
-  //  for (int i=1; i<=n; i++) {
-  //   fprintf(fptr,"%g\t%g\n",
-  // 	   h3->GetBinLowEdge(i)+h3->GetBinWidth(i)/2,
-  // 	   h3->GetBinContent(i));
-  // }
-  // fclose(fptr);
-
-	c0->SaveAs(Form("Yields/P1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
-	c0->SaveAs(Form("Yields/P1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
+	// c0->SaveAs(Form("Yields/P1/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
+	// c0->SaveAs(Form("Yields/P1/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
 
 
 	ofstream myfile;
@@ -289,7 +269,6 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	fyield->Close();
 	fbackground->Close();
 	delete c0;
-
 
 	gROOT->Reset();
 }
@@ -312,7 +291,7 @@ void p1Yields(){
 	const char *detect;
 	const char *files;
 
-	// // Prepare structure of data output in CSV file
+	// Prepare structure of data output in CSV file
 	ofstream myfile;
 	myfile.open ("Yields/P1/_P1.csv",std::ios::out);
 	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","

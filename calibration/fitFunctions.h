@@ -171,18 +171,18 @@ vector < double > single_gauss_peak(double low, double high, TH1D *H0){
 	TF1 *ffit1 = new TF1("ffit1",fit_single_gauss_func,low,high,6);
 	ffit1->SetParNames("a0","a1","a2","norm","mean","sigma");
 	ffit1->SetNpx(500);
-	ffit1->SetParameters(1,1,1,4000,(low+high)/2,12);
+	ffit1->SetParameters(1,1,0,1e6,(low+high)/2,5);//12
 
 	ffit1->FixParameter(2,0);				// Makes it a linear background
 
     ffit1->SetParLimits(3,0,1e8);
     ffit1->SetParLimits(4,low,high);		// Peak centroid range
-    ffit1->SetParLimits(5,8,15);			// Std dev range
+    ffit1->SetParLimits(5,2,15);//15			// Std dev range
 
 	ffit1->SetLineColor(kBlack);
 	H0->Fit("ffit1","SQR");
-
-
+	// cout << ffit1->GetParameter(5)<<"\n";
+	// cout << ffit1->GetParameter(0) <<"\t"<<ffit1->GetParameter(1)<<"\t"<<ffit1->GetParameter(4) << endl;;
 	double peakPos = ffit1->GetParameter(4);
 	double sigma = ffit1->GetParameter(5);
 

@@ -176,7 +176,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 		// Found the lines, update their ranges run by run
 		fLow[detLoop] = fPosition[1];
-		fLow[detLoop] = fPosition[2];
+		fHigh[detLoop] = fPosition[2];
 
 		vector < double > calibrators;
 

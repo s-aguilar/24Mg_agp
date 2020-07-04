@@ -20,7 +20,6 @@ void writeSummedSpectrasToASCII(){
 
         // Get histograms from root file
         TH1D *h = static_cast<TH1D*>(summedAll->Get(Form("h%d",detLoop)));
-        TH1D *hh = static_cast<TH1D*>(summedAll->Get(Form("h%d",detLoop)));
 
         // First file
         int n = h->GetNbinsX();
@@ -35,6 +34,7 @@ void writeSummedSpectrasToASCII(){
     	else cout << Form("summedSpectrasALL_det-%d: Messed up\n",detLoop);
 
         // Other file
+        TH1D *hh = static_cast<TH1D*>(summedBGsubAll->Get(Form("h%d",detLoop)));
         int nn = hh->GetNbinsX();
         outFileName = Form("E_cal_spectras/summedSpectrasBGsubALL_det-%d",detLoop);
     	ofstream myfile1 (outFileName.c_str(), ios::out);

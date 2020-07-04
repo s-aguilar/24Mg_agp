@@ -32,8 +32,8 @@ int loc = 0;
 
 
 // Flourine line from first run, these get updated run by run with the new ranges
-double fLow[] = {113,123,129,125,124,129,126,127,126,128,127,126,123};
-double fHigh[] = {140,143,144,144,141,147,146,146,143,143,147,143,147};
+double fLow[] = {116,123,127,123,122,126,124,125,124,126,125,122,124};
+double fHigh[] = {138,148,148,146,144,149,148,148,145,145,150,145,145};
 
 // global array for gain match constants
 double _a_gain[13];
@@ -49,11 +49,13 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	const vector < double > &peak2BackLow, const vector < double > &peak2BackHigh,
 	vector < double > &peak1SpecLow, vector < double > &peak1SpecHigh,
 	vector < double > &peak2SpecLow, vector < double > &peak2SpecHigh,
-	double low, double high, int detLoop){
+	int detLoop, TFile *fileToSaveBGSubtractedSpectra){
 
 
 	TFile *fyield = new TFile(fileName);
 	TFile *fbackground = new TFile(fileBack);	// bg spectra
+
+	gSystem->cd("/afs/crc.nd.edu/user/s/saguilar/Group/24Mg_ap/");
 
 	// Get runtime info from root file
 	TVectorD *run_t0 = static_cast<TVectorD*>(fyield->Get("lastTimeStampSeconds-0"));
@@ -91,11 +93,6 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	TH1D *h2 = new TH1D(Form("h2 - det-%i",detLoop),Form("h2 - det-%i",detLoop),8192,0,8192);
 	TH1D *h3 = new TH1D(Form("h3 - det-%i",detLoop),Form("h3 - ECAL - det-%i",detLoop),8192,0,8192);
 
-	double area;
-	double area_err;
-	double chi2NDF;
-	double sig1;
-	double sig2;
 
 	double a = 0;
 	double b = 0;
@@ -106,8 +103,6 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 	double linear = 0;
 	double offset = 0;
-
-	vector < double > p2Peak;
 
 
 	// Only gain match longer runs where background peaks appear
@@ -150,7 +145,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 		// Draw results
 		hyield->Draw();
-		hyield->GetXaxis()->SetRangeUser(600,1200);
+		hyield->GetXaxis()->SetRangeUser(1000,1500);
 		hyield->SetStats(kFALSE);
 
 
@@ -172,11 +167,13 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 		// Now I've gainmatched and subtracted the BG -> ysubtracted, find flourine line position
 		vector < double > fPosition;
+		// ysubtracted->GetXaxis()->SetRangeUser(1000,1500);
+		// cout<<fLow[detLoop] << "\t" << fHigh[detLoop]<<"\n";
 		fPosition = single_gauss_peak(fLow[detLoop],fHigh[detLoop],ysubtracted);
 
 		// Found the lines update their ranges run by run
 		fLow[detLoop] = fPosition[1];
-		fLow[detLoop] = fPosition[2];
+		fHigh[detLoop] = fPosition[2];
 
 		vector < double > calibrators;
 
@@ -199,7 +196,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 		// Draw results
 		hyield->Draw();
-		hyield->GetXaxis()->SetRangeUser(600,1200);
+		hyield->GetXaxis()->SetRangeUser(1000,1500);
 		hyield->SetStats(kFALSE);
 
 		// Recalculate errors manually
@@ -222,26 +219,15 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 	}
 
 
-	h3->GetXaxis()->SetRangeUser(600,1200);
+	// h3->GetXaxis()->SetRangeUser(1000,1500);
 	h3->Draw();
-	h3->SetStats(kFALSE);
+	// h3->SetStats(kFALSE);
 
-	p2Peak = single_gauss_area(1014.5,h3); //1014.52
+	// Change the current top directory ( the last open TFile) back to 'ff'
+	// where I would  like to write the histograms
+	fileToSaveBGSubtractedSpectra->cd();
 
-	area = p2Peak[0];
-	area_err = p2Peak[1];
-	chi2NDF = p2Peak[2];
-	sig1 = p2Peak[3];
-	linear = p2Peak[4];
-	offset = p2Peak[5];
-
-	// The charge is integrated charge of alpha which is 2+
-	double yield = area/(charge);
-	double yield_err = area_err/(charge);
-
-	double goodFit;
-	if (chi2NDF <= 1.4 && chi2NDF >=.6 ) goodFit = 1;
-	else goodFit = 0;
+	ysubtracted->Write(Form("det-%i",detLoop));
 
 	string runNum = fileName;
 	if (loc==1) runNum = runNum.substr(9,3);
@@ -249,17 +235,6 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 	string detNum = detector;
 
-	// c0->SaveAs(Form("Yields/P2/run0%s/det_%s_Fit.png",runNum.c_str(),detNum.c_str()));
-	// c0->SaveAs(Form("Yields/P2/det-%i/run0%s_Fit.png",detLoop,runNum.c_str()));
-
-
-	ofstream myfile;
-	myfile.open ("Yields/P2/_P2.csv",std::ios::app);
-	myfile<<Form("run0%s",runNum.c_str())<<","<< Form("det_%s",detNum.c_str())<<","<<
-				yield<<","<<yield_err<<","<<area<<","<<area_err<<","<<runTime0<<","<<
-				goodFit<<","<<a<<","<<b<<","<<sig1<<","<<chi2NDF<<","<<linear<<","<<
-				offset<<","<<charge<<"\n";
-	myfile.close();
 
 
 	c0->Clear();
@@ -276,7 +251,7 @@ void peakFitter(const char *fileName, const char *fileBack, const char *detector
 
 
 /*==============================MAIN=========================================*/
-void spectraCalibrator(){
+void rawBGSubSpectrasToRoot(){
 
 	// Suppress certain root print statements
 	gErrorIgnoreLevel = kWarning;
@@ -291,13 +266,6 @@ void spectraCalibrator(){
 	const char *detect;
 	const char *files;
 
-	// Prepare structure of data output in CSV file
-	ofstream myfile;
-	myfile.open ("Yields/P2/_P2.csv",std::ios::out);
-	myfile<<"Run"<<","<<"Detector"<<","<<"Yield"<<","<<"Yield err"<<","<<"Area"<<","
-			<<"Area err"<<","<<"Time"<<","<<"Fit Status"<<","<<"a"<<","<<"b"<<","
-			<<"sig1"<<","<<"X2NDF"<<","<<"Linear"<<","<<"Offset"<<","<<"Q_int"<<"\n";
-	myfile.close();
 
 	// BG spectra peak ranges
 	const vector < double >  peak1BackLow ({310,330,330,330,320,340,330,330,330,330,320,310,330});
@@ -311,14 +279,6 @@ void spectraCalibrator(){
 	vector < double >  peak1SpecHigh ({350,380,390,380,360,380,380,380,380,380,380,380,380});
 	vector < double >  peak2SpecLow ({1285,1400,1400,1390,1360,1430,1410,1420,1410,1410,1420,1410,1400});
 	vector < double >  peak2SpecHigh ({1360,1480,1510,1485,1440,1510,1480,1500,1480,1510,1530,1490,1490});
-
-
-		// Make directory to visually inspect the fits
-		for(int ii = 0; ii<13; ii++){
-			try {
-				gSystem->Exec(Form("mkdir Yields/P2/det-%i",ii));
-			}catch(...){}
-		}
 
 
 	// Loop through runs: 159-410
@@ -343,11 +303,19 @@ void spectraCalibrator(){
 		else if(i==294) continue;
 		else if(i==406) continue;
 
-		try {
-			gSystem->Exec(Form("mkdir Yields/P2/run0%d",i));
-		}catch(...){}
 
-		double p2;
+
+		TString runNum_TString;
+
+		if(i < 100) runNum_TString = "00";
+		else if((i >= 100) && (i < 1000)) runNum_TString = "0";
+		else runNum_TString = "";
+
+		runNum_TString += i;	// Should be format 0001 -> 9999
+		const char *runNum_String = (const char*)runNum_TString;
+
+		// // Save TFitResult results.
+		TFile *ff = new TFile(Form("E_cal_spectras/rawbgSubtracted_run_%s.root",runNum_String),"RECREATE");
 
 		// Loop through detectors on board 1 (0-7) and board 2 (8-12)
 		for(int j=0;j<13;j++){ // 13
@@ -362,17 +330,21 @@ void spectraCalibrator(){
 				detect = Form("h1-%d",j-8);
 			}
 
-			// Estimated peak positions from calibration
-			double peakPos[] = {927,1002,1014,999,973,1022,1009,1014,1000,1011,1020,996,1000};
-			p2 = peakPos[j];
 
 			// Perform peak fitting
 			peakFitter(files,fileBackground,detect,peak1BackLow,peak1BackHigh,
 				peak2BackLow,peak2BackHigh,peak1SpecLow,peak1SpecHigh,
-				peak2SpecLow,peak2SpecHigh,p2-50,p2+50,j);
+				peak2SpecLow,peak2SpecHigh,j,ff);
 		}
+
+		// // Write all TObjects in memory (TFitResult) to TFile
+		ff->Write();
+		ff->Close();
+		// delete h3;
 
 		cout << Form("Fitting %d complete",fileNum) << endl;
 		fileNum+=1;
+
+		delete ff;
 	}
 }

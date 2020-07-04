@@ -100,7 +100,7 @@ dict_channels = {'p1':p1,'p2':p2,'a1':a1}
 
 # If plot is 0 then no plotting, any other value it will generate the plots
 # 'a' for analytic solution plots
-plot_a = 1
+plot_a = 0
 
 # Perform the analysis over all the channels
 channels = ['p1','p2','a1']
@@ -240,10 +240,6 @@ for ch in channels:
             plt.savefig('legendre_out/fits/%s/%5.4fMeVFit.png'%(ch,nrg),dpi=300)
             plt.clf()
 
-    continue####
-
-
-
 
     # Convert lists into arrays
     for ind in range(0,leg_ord+1):
@@ -339,7 +335,6 @@ for ch in channels:
         cross = np.array(a0_final)*4*np.pi
         cross_err = np.array(a0_err_final)*4*np.pi
         print(len(a0_final),len(a0_err_final),len(energyList))
-        # exit()
         for loop in range(len(energyList)):
             if cross[loop] > 0 and cross_err[loop] > 0 and cross_err[loop] < cross[loop]:
                 printOut= '%f \t %d \t %.8E \t %.8E \n' %(energyList[loop],0,cross[loop],cross_err[loop])
@@ -440,7 +435,6 @@ for ch in channels:
     plt.savefig('legendre_out/excitationCurve/%s/%s_a0Curve.png' % (ch,ch),dpi=300)
     # plt.show()
     plt.clf()
-    # exit()
 
 
     # Save the points
@@ -595,10 +589,6 @@ for ch in channels:
     df = df.assign(Rate=pd.Series(rxnRate,index=df.index).to_numpy())
     df.to_csv('legendre_out/DATA/%s/a%d/%s_rates.csv'%(ch,legendre_order[0][-1],ch))
     df.to_excel('legendre_out/DATA/%s/a%d/%s_rates.xlsx'%(ch,legendre_order[0][-1],ch))
-
-    # exit()
-
-    # continue
     print('\n\n')
 # """
 
